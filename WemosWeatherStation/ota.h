@@ -129,6 +129,6 @@ void otaLoop() {
 
 }
 #else
-void otaSetup();
-void otaLoop();
+void otaSetup() {}
+void otaLoop() {}
 #endif
