@@ -3,6 +3,7 @@
 #include "Adafruit_MCP9808.h"
 #include <HTU21D.h>
 #include "MeteoFunctions.h"
+#include "MovingAverageFloat.h"
 
 BME280I2C::Settings settings(
     BME280::OSR_X2,
@@ -10,7 +11,7 @@ BME280I2C::Settings settings(
     BME280::OSR_X4,
     BME280::Mode_Forced,
     BME280::StandbyTime_1000ms,
-    BME280::Filter_16,
+    BME280::Filter_8,
     BME280::SpiEnable_False,
     BMP280_ADDR
 );
@@ -19,6 +20,7 @@ Adafruit_MCP9808 mcp;
 BME280I2C bme(settings);
 HTU21D htu(HTU21D_RES_RH12_TEMP14);
 MeteoFunctions meteoFunctions;
+MovingAverageFloat <SAMPLES> filter[3];
 
 float round2(float value) {
     return round(value * 100.0) / 100.0;
@@ -65,15 +67,17 @@ void sensorsLoop() {
 
     last_check = millis();
 
-    float temp_mcp = mcp.readTempC();
+    float temp_mcp = filter[0].add(mcp.readTempC());
     float temp_bmp = bme.temp();
     float temp_htu = htu.readTemperature();
     float abs_pressure = bme.pres(BME280::PresUnit_Pa);
-    float rel_pressure = meteoFunctions.relativePressure_c(abs_pressure, temp_bmp);
-    float humidity = htu.readCompensatedHumidity();
+    float rel_pressure = filter[2].add(meteoFunctions.relativePressure_c(abs_pressure, HEIGHT_ABOVE_SEA, temp_bmp));
+    float humidity = filter[1].add(htu.readCompensatedHumidity());
 
 #if defined(DEBUG)
     Serial.print("[SENSOR] Pressure: ");
+    Serial.print(abs_pressure);
+    Serial.print("=");
     Serial.print(rel_pressure);
     Serial.println(" Pa");
 
@@ -94,16 +98,16 @@ void sensorsLoop() {
     counter++;
 
     if (counter == SAMPLES) {  // time to send data
-        StaticJsonBuffer < (JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(3)) > jsonBuffer;
+        StaticJsonBuffer < (JSON_OBJECT_SIZE(7)) > jsonBuffer;
 
         JsonObject& json = jsonBuffer.createObject();
+        json["temp"] = round2(temp_mcp);
         json["humidity"] = round2(humidity);
         json["pressure"] = round2(rel_pressure / 100.0);
-
-        JsonArray& temperatures = json.createNestedArray("temp");
-        temperatures.add(round2(temp_mcp));
-        temperatures.add(round2(temp_bmp));
-        temperatures.add(round2(temp_htu));
+        json["dew"] = round2(meteoFunctions.dewPoint_c(temp_mcp, humidity));
+        json["humidex"] = round2(meteoFunctions.humidex_c(temp_mcp, humidity));
+        json["heat"] = round2(meteoFunctions.heatIndex_c(temp_mcp, humidity));
+        json["cloud"] = round2(meteoFunctions.cloudBase_m(temp_mcp, humidity));
 
 #if defined(DEBUG)
         Serial.println("[MQTT] Sending sensor data:");

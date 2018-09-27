@@ -3,14 +3,14 @@
 Button button(BUTTON_PIN);
 
 void buttonLoop() {
-  button.read();
+    button.read();
 
-  if (button.pressedFor(LONG_PRESS)) {
-    should_save_config = false;
-    configPortal(false);
-  }
+    if (button.pressedFor(LONG_PRESS)) {
+        should_save_config = false;
+        configPortal(false);
+    }
 }
 
 void buttonSetup() {
-  button.begin();
+    button.begin();
 }

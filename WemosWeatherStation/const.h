@@ -23,9 +23,10 @@
 #define LONG_PRESS 1000  // ms
 
 #define READ_INTERVAL 3750  // ms
-#define SAMPLES 16  // must be binary number 2,4,8,16 etc; READ_INTERVAL*SAMPLES=sending time in ms
+#define SAMPLES 16  // READ_INTERVAL*SAMPLES=sending time in ms
 #define METERS_INTERVAL 60  // how ofter send data from meters in sec
 #define METERS_DIR_FILTERING 20  // filter last 20 samples of wind vane
+#define HEIGHT_ABOVE_SEA 415.0  // m
 
 #define BMP280_ADDR 0x76
 #define MCP9808_ADDR 0x18

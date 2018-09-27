@@ -54,30 +54,45 @@ void metersLoop() {
     }
 
     if (rain_data || meters_data) {
-        StaticJsonBuffer < JSON_OBJECT_SIZE(2) > jsonBuffer;
-
+#if defined(DEBUG)
+        Serial.println("Rain/meters");
+#endif
+        StaticJsonBuffer < JSON_OBJECT_SIZE(5) > jsonBuffer;
         JsonObject& json = jsonBuffer.createObject();
+        char message[150];
 
         if (rain_data) {
             rain_data = false;
-
             json["rain"] = RAIN_GAUGE_RES;
+
+#if defined(DEBUG)
+            Serial.println("[MQTT] Sending rain:");
+            json.prettyPrintTo(Serial);
+            Serial.println();
+#endif
+
+            uint32_t len = json.printTo(message, sizeof(message));
+            mqttClient.publish(MQTT_RAIN_TOPIC, MQTT_QOS, false, message, len);
         }
 
         if (meters_data) {
             meters_data = false;
+            float wind_speed = round2(meters.getSpeed());
 
             json["wind_dir"] = round2(meters.getDir());
-            json["wind_speed"] = round2(meters.getSpeed());
-        }
+            json["wind_speed"] = wind_speed;
+            json["wind_chill"] = round2(meteoFunctions.windChill_c(filter[0].get(), wind_speed));
+            json["apparent"] = round2(meteoFunctions.apparentTemp_c(filter[0].get(), filter[1].get(), wind_speed));
+            json["beaufort"] = meteoFunctions.beaufort(wind_speed);
 
 #if defined(DEBUG)
-        Serial.println("[MQTT] Sending meters data:");
-        json.prettyPrintTo(Serial);
-        Serial.println();
+            Serial.println("[MQTT] Sending meters data:");
+            json.prettyPrintTo(Serial);
+            Serial.println();
 #endif
-        char message[150];
-        uint32_t len = json.printTo(message, sizeof(message));
-        mqttClient.publish(MQTT_WIND_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
+
+            uint32_t len = json.printTo(message, sizeof(message));
+            mqttClient.publish(MQTT_WIND_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
+        }
     }
 }

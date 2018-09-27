@@ -8,24 +8,24 @@
 
 void setup() {
 #if defined(DEBUG)
-  Serial.begin(115200);
-  Serial.println();
+    Serial.begin(115200);
+    Serial.println();
 #endif
 
-  wifiSetup();
-  otaSetup();
-  mqttSetup();
-  sensorsSetup();
-  metersSetup();
+    wifiSetup();
+    otaSetup();
+    mqttSetup();
+    sensorsSetup();
+    metersSetup();
 }
 
 void loop() {
-  otaLoop();
+    otaLoop();
 
-  if (!ota_in_progess) {
-    buttonLoop();
-    mqttLoop();
-    sensorsLoop();
-    metersLoop();
-  }
+    if (!ota_in_progess) {
+        buttonLoop();
+        mqttLoop();
+        sensorsLoop();
+        metersLoop();
+    }
 }
