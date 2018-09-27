@@ -14,6 +14,9 @@ void otaSetup() {
             Serial.println("[NoFUSS] Starting");
 #endif
             ota_in_progess = true;
+
+            attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), NULL, FALLING);
+            attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), NULL, FALLING);
         }
 
 #ifdef DEBUG

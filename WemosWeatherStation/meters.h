@@ -3,7 +3,7 @@
 #include "MCP3X21.h"
 
 Ticker ticker;
-WeatherMeters <0> meters(-1);
+WeatherMeters <METERS_DIR_FILTERING> meters(-1, METERS_INTERVAL);
 MCP3021 mcp3021(MCP3021_ADDRESS);
 
 volatile bool meters_data = false;
@@ -19,8 +19,10 @@ void intRaingauge() {
 }
 
 void secondTimer() {
-    read_adc = true;
-    meters.timer();
+    if (!ota_in_progess) {
+        meters.timer();
+        read_adc = true;
+    }
 }
 
 void metersData(void) {
@@ -42,8 +44,8 @@ void metersSetup() {
     ticker.attach(1.0, secondTimer);
     meters.reset();  // in case we got already some interrupts
 
-#if defined(ENABLE_DEBUG)
-    meters.init(&Serial);
+#if defined(DEBUG)
+    meters.debug(&Serial);
 #endif
 }
 
