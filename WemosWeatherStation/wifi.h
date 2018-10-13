@@ -23,17 +23,8 @@ bool ota_in_progess = false;
 
 bool should_save_config = false;
 
-void mqttSetup();
-void sendStatus();
-
 void saveConfigCallback() {
     should_save_config = true;
-}
-
-void onWifiDisconnect(const WiFiEventStationModeDisconnected& event) {
-#if defined(DEBUG)
-    Serial.println("Disconnected from Wi-Fi.");
-#endif
 }
 
 void configPortal(bool mode) {
@@ -82,14 +73,14 @@ void configPortal(bool mode) {
     }
 
     if (should_save_config) {
-        //read updated parameters
-        strcpy(mqtt_server, custom_mqtt_server.getValue());
-        strcpy(mqtt_port, custom_mqtt_port.getValue());
-        strcpy(mqtt_user, custom_mqtt_user.getValue());
-        strcpy(mqtt_password, custom_mqtt_password.getValue());
+        // read updated parameters
+        strncpy(mqtt_server, custom_mqtt_server.getValue(), sizeof(mqtt_server));
+        strncpy(mqtt_port, custom_mqtt_port.getValue(), sizeof(mqtt_port));
+        strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
+        strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
 
 #if defined(NOFUSS_OTA)
-        strcpy(nofuss_server, custom_nofuss_server.getValue());
+        strncpy(nofuss_server, custom_nofuss_server.getValue(), sizeof(nofuss_server));
 #endif
 
 #if defined(DEBUG)
@@ -125,7 +116,6 @@ void configPortal(bool mode) {
 }
 
 void wifiSetup() {
-    wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
     WiFi.hostname(DEVICE_NAME);
 
 #if defined(DEBUG)
@@ -167,13 +157,13 @@ void wifiSetup() {
                     Serial.println("[FS] JSON parsed");
 #endif
 
-                    strcpy(mqtt_server, json["mqtt_server"]);
-                    strcpy(mqtt_port, json["mqtt_port"]);
-                    strcpy(mqtt_user, json["mqtt_user"]);
-                    strcpy(mqtt_password, json["mqtt_password"]);
+                    strncpy(mqtt_server, json["mqtt_server"], sizeof(mqtt_server));
+                    strncpy(mqtt_port, json["mqtt_port"], sizeof(mqtt_port));
+                    strncpy(mqtt_user, json["mqtt_user"], sizeof(mqtt_user));
+                    strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
 
 #if defined(NOFUSS_OTA)
-                    strcpy(nofuss_server, json["nofuss_server"]);
+                    strncpy(nofuss_server, json["nofuss_server"], sizeof(nofuss_server));
 #endif
 
                 } else {

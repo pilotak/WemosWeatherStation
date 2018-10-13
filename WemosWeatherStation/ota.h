@@ -74,7 +74,7 @@ void otaSetup() {
 }
 
 void otaLoop() {
-    static unsigned long last_check = 0;
+    static uint32_t last_check = 0;
 
     if (WiFi.status() != WL_CONNECTED) return;
 
@@ -98,18 +98,23 @@ void otaSetup() {
     });
     ArduinoOTA.onEnd([]() {
 #if defined(DEBUG)
-        Serial.println("\n[OTA] End");
+        Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
+        Serial.println("[OTA] End");
 #endif
         ota_in_progess = false;
     });
 
 #if defined(DEBUG)
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-        Serial.print("[OTA] Progress:");
-        Serial.println((progress / (total / 100)));
+        Serial.print("\e[2K");  // clear line
+        Serial.print("\e[0E");  // move to the beginning of the current line
+        Serial.print("[OTA] Progress: ");
+        Serial.print((progress / (total / 100)));
+        Serial.print("%");
     });
 
     ArduinoOTA.onError([](ota_error_t error) {
+        Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
         Serial.print("[OTA] Error: ");
         Serial.println(error);
 

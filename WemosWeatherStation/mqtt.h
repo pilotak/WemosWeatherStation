@@ -1,80 +1,88 @@
+#include <ESP8266WiFi.h>
 #include <AsyncMqttClient.h>
 
-AsyncMqttClient mqttClient;
+AsyncMqttClient mqtt;
 
-void onMqttConnect(bool sessionPresent) {
+void sendStatus() {
+    if (mqtt.connected()) {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Connected");
+        Serial.println("[MQTT] Sending status data");
 #endif
 
-    mqttClient.subscribe(MQTT_CMD_TOPIC, MQTT_QOS);
-    sendStatus();
-}
+        // alive message
+        mqtt.publish(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_ALIVE, strlen(MQTT_STATUS_ALIVE));
 
-void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
-#if defined(DEBUG)
-    Serial.println("[MQTT] Disconnected");
-#endif
+        // IP address
+        mqtt.publish(MQTT_IP_TOPIC, MQTT_QOS, MQTT_RETAIN, WiFi.localIP().toString().c_str(), 16);
+
+        // RSSI
+        char buf[5];
+        snprintf(buf, sizeof(buf), "%i", WiFi.RSSI());
+        mqtt.publish(MQTT_RSSI_TOPIC, MQTT_QOS, MQTT_RETAIN, buf, strlen(buf));
+    }
 }
 
 void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Message received:");
-    Serial.print("       topic: ");
-    Serial.println(topic);
-    Serial.print("       qos: ");
-    Serial.println(properties.qos);
-    Serial.print("       dup: ");
-    Serial.println(properties.dup);
-    Serial.print("       retain: ");
-    Serial.println(properties.retain);
-    Serial.print("       len: ");
-    Serial.println(len);
-    Serial.print("       index: ");
-    Serial.println(index);
-    Serial.print("       total: ");
-    Serial.println(total);
+    Serial.print("[MQTT] Message arrived [");
+    Serial.print(topic);
+    Serial.print("]: ");
+
+    for (uint16_t i = 0; i < len; i++) {
+        Serial.print(static_cast<char>(payload[i]));
+    }
+
+    Serial.println();
 #endif
 }
 
-void mqttConnect() {
+void onMqttConnect(bool sessionPresent) {
+    sendStatus();
+    mqtt.subscribe(MQTT_CMD_TOPIC, MQTT_QOS);
+}
+
+void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Connecting...");
+    Serial.print("[MQTT] Disconnected: ");
+    Serial.println((int8_t)reason);
 #endif
-    mqttClient.connect();
+
+    if (WiFi.isConnected()) {
+        mqtt.connect();
+    }
 }
 
 void mqttSetup() {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Setup");
+    Serial.println("[MQTT] Setup OK");
 #endif
-    mqttClient.onConnect(onMqttConnect);
-    mqttClient.onMessage(onMqttMessage);
-    mqttClient.setServer(mqtt_server, atoi(mqtt_port));
-    mqttClient.setClientId(DEVICE_NAME);
-    mqttClient.setKeepAlive(MQTT_STATUS_INTERVAL);
-    mqttClient.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_DEAD, strlen(MQTT_STATUS_ALIVE));
-    mqttConnect();
-}
 
-void sendStatus() {
-    // alive message
-    mqttClient.publish(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_ALIVE);
+    mqtt.setServer(mqtt_server, atoi(mqtt_port));
+    mqtt.setCredentials(mqtt_user, mqtt_password);
+    mqtt.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_DEAD, strlen(MQTT_STATUS_DEAD));
+    mqtt.setKeepAlive((MQTT_STATUS_INTERVAL / 1000) + 2);  // converts ms->s + 2 sec extra, in case we have a delay
+    mqtt.onConnect(onMqttConnect);
+    mqtt.onDisconnect(onMqttDisconnect);
+    mqtt.onMessage(onMqttMessage);
 
-    // IP address
-    mqttClient.publish(MQTT_IP_TOPIC, MQTT_QOS, MQTT_RETAIN, WiFi.localIP().toString().c_str());
-
-    // RSSI
-    char buf[5];
-    snprintf(buf, sizeof(buf), "%i", WiFi.RSSI());
-    mqttClient.publish(MQTT_RSSI_TOPIC, MQTT_QOS, MQTT_RETAIN, buf);
+    mqtt.connect();
 }
 
 void mqttLoop() {
-    static unsigned long last_check = 0;
+    static uint32_t last_check = 0;
+    static uint32_t last_status = 0;
 
-    if ((last_check > 0) && ((millis() - last_check) < MQTT_STATUS_INTERVAL)) return;
+    if ((millis() - last_check) >= MQTT_CHECK_INTERVAL) {
+        last_check = millis();
 
-    last_check = millis();
-    sendStatus();
+        if (!mqtt.connected()) {
+            mqtt.connect();
+        }
+    }
+
+    if ((millis() - last_status) >= MQTT_STATUS_INTERVAL) {
+        last_status = millis();
+
+        sendStatus();
+    }
 }

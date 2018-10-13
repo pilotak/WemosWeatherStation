@@ -8,6 +8,7 @@
 #define DEFAULT_MQTT_PORT "1883"  // important to be a string
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
+#define MQTT_CHECK_INTERVAL 5000
 #define MQTT_STATUS_INTERVAL 30000
 #define MQTT_IP_TOPIC DEVICE_NAME "/ip"  // will result ie. meteo/ip
 #define MQTT_RSSI_TOPIC DEVICE_NAME "/rssi"  // will result ie. meteo/rssi
