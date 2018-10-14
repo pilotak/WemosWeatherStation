@@ -100,7 +100,7 @@ void metersLoop() {
             meters_data = false;
 
 #if defined(DEBUG)
-            Serial.println("[MQTT] Not connected");
+            Serial.println("[MQTT] Could not send meters data");
 #endif
         }
     }

@@ -131,7 +131,7 @@ void sensorsLoop() {
 
         } else {
 #if defined(DEBUG)
-            Serial.println("[MQTT] Not connected");
+            Serial.println("[MQTT] Could not send sensors data");
 #endif
         }
     }

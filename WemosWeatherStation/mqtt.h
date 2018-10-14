@@ -37,18 +37,25 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 }
 
 void onMqttConnect(bool sessionPresent) {
+#if defined(DEBUG)
+    Serial.print("[MQTT] Connected, rc=");
+    Serial.println(sessionPresent);
+#endif
+
     sendStatus();
     mqtt.subscribe(MQTT_CMD_TOPIC, MQTT_QOS);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
+    if (!ota_in_progess) {
 #if defined(DEBUG)
-    Serial.print("[MQTT] Disconnected: ");
-    Serial.println((int8_t)reason);
+        Serial.print("[MQTT] Not connected, rc=");
+        Serial.println((int8_t)reason);
 #endif
 
-    if (WiFi.isConnected()) {
-        mqtt.connect();
+        if (WiFi.isConnected()) {
+            mqtt.connect();
+        }
     }
 }
 
@@ -57,7 +64,15 @@ void mqttSetup() {
     Serial.println("[MQTT] Setup OK");
 #endif
 
-    mqtt.setServer(mqtt_server, atoi(mqtt_port));
+    IPAddress ip;
+
+    if (ip.fromString(mqtt_server)) {  // check if server is IP address or hostname
+        mqtt.setServer(ip, atoi(mqtt_port));
+
+    } else {
+        mqtt.setServer(mqtt_server, atoi(mqtt_port));
+    }
+
     mqtt.setCredentials(mqtt_user, mqtt_password);
     mqtt.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_DEAD, strlen(MQTT_STATUS_DEAD));
     mqtt.setKeepAlive((MQTT_STATUS_INTERVAL / 1000) + 2);  // converts ms->s + 2 sec extra, in case we have a delay
