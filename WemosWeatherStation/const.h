@@ -29,7 +29,7 @@
 #define METERS_DIR_FILTERING 20  // filter last 20 samples of wind vane
 #define HEIGHT_ABOVE_SEA 415.0  // m
 
-#define BMP280_ADDR 0x76
+#define BMP280_ADDR BME280I2C::I2CAddr_0x76  // or BME280I2C::I2CAddr_0x77
 #define MCP9808_ADDR 0x18
 #define HTU21D_ADDR 0x40
 #define MCP3021_ADDRESS 0x48
