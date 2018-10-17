@@ -21,7 +21,6 @@ BME280I2C bmp(settings);
 HTU21D htu(HTU21D_RES_RH12_TEMP14);
 MeteoFunctions meteoFunctions;
 MovingAverageFloat <SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
-uint8_t sensor_state = 0b000;  // BMP, MCP, HTU
 
 float round2(float value) {
     return round(value * 100.0) / 100.0;
@@ -94,6 +93,8 @@ void sensorsLoop() {
                 filter[0].reset();
                 filter[3].reset();
                 filter[4].reset();
+
+                temp_bmp = bmp.temp();
 
 #if defined(DEBUG)
                 Serial.println("[SENSOR] BMP280 is back on.");
@@ -205,32 +206,62 @@ void sensorsLoop() {
 
     if (counter == SAMPLES) {  // time to send data
         if (mqtt.connected()) {
-            StaticJsonBuffer < (JSON_OBJECT_SIZE(9) + JSON_ARRAY_SIZE(3)) > jsonBuffer;
+            StaticJsonBuffer < (JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(3)) > jsonBuffer;
 
             JsonObject& json = jsonBuffer.createObject();
-            json["humidity"] = round2(humidity);
-            json["pressure_rel"] = round2(rel_pressure / 100.0);
-            json["pressure_abs"] = round2(abs_pressure / 100.0);
-            json["dew"] = round2(meteoFunctions.dewPoint_c(temp_mcp, humidity));
-            json["humidex"] = round2(meteoFunctions.humidex_c(temp_mcp, humidity));
-            json["heat"] = round2(meteoFunctions.heatIndex_c(temp_mcp, humidity));
-            json["cloud"] = round2(meteoFunctions.cloudBase_m(temp_mcp, humidity));
 
-            JsonArray& temperatures = json.createNestedArray("temp");
-            temperatures.add(round2(temp_mcp));
-            temperatures.add(round2(temp_bmp));
-            temperatures.add(round2(temp_htu));
+            if (!isnan(humidity)) {
+                json["humidity"] = round2(humidity);
+            }
 
+            if (!isnan(rel_pressure)) {
+                json["pressure_rel"] = round2(rel_pressure / 100.0);
+            }
+
+            if (!isnan(abs_pressure)) {
+                json["pressure_abs"] = round2(abs_pressure / 100.0);
+            }
+
+            if (!isnan(temp_mcp) && !isnan(humidity)) {
+                json["dew"] = round2(meteoFunctions.dewPoint_c(temp_mcp, humidity));
+                json["humidex"] = round2(meteoFunctions.humidex_c(temp_mcp, humidity));
+                json["heat"] = round2(meteoFunctions.heatIndex_c(temp_mcp, humidity));
+                json["cloud"] = round2(meteoFunctions.cloudBase_m(temp_mcp, humidity));
+            }
+
+            if (!isnan(temp_mcp) && !isnan(temp_bmp) && !isnan(temp_htu)) {
+                JsonArray& temperatures = json.createNestedArray("temp");
+
+                if (!isnan(temp_mcp)) {
+                    temperatures.add(round2(temp_mcp));
+                }
+
+                if (!isnan(temp_bmp)) {
+                    temperatures.add(round2(temp_bmp));
+                }
+
+                if (!isnan(temp_htu)) {
+                    temperatures.add(round2(temp_htu));
+                }
+            }
+
+            if (json.size() > 0) {
 #if defined(DEBUG)
-            Serial.println("[MQTT] Sending sensor data:");
-            json.prettyPrintTo(Serial);
-            Serial.println();
+                Serial.println("[MQTT] Sending sensor data:");
+                json.prettyPrintTo(Serial);
+                Serial.println();
 #endif
 
-            char message[350];
-            uint32_t len = json.printTo(message, sizeof(message));
-            mqtt.publish(MQTT_SENSORS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
-            counter = 0;
+                char message[350];
+                uint32_t len = json.printTo(message, sizeof(message));
+                mqtt.publish(MQTT_SENSORS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
+                counter = 0;
+
+            } else {
+#if defined(DEBUG)
+                Serial.println("[MQTT] No valid data to send");
+#endif
+            }
 
         } else {
 #if defined(DEBUG)

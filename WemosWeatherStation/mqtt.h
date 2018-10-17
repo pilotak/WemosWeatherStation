@@ -19,6 +19,11 @@ void sendStatus() {
         char buf[5];
         snprintf(buf, sizeof(buf), "%i", WiFi.RSSI());
         mqtt.publish(MQTT_RSSI_TOPIC, MQTT_QOS, MQTT_RETAIN, buf, strlen(buf));
+
+        char state[1] = {sensor_state + '0'};
+
+        // sensor status
+        mqtt.publish(MQTT_SENSORS_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, state, 1);  // send as ASCII
     }
 }
 
@@ -87,17 +92,19 @@ void mqttLoop() {
     static uint32_t last_check = 0;
     static uint32_t last_status = 0;
 
-    if ((millis() - last_check) >= MQTT_CHECK_INTERVAL) {
-        last_check = millis();
+    if (!ota_in_progess) {
+        if ((millis() - last_check) >= MQTT_CHECK_INTERVAL) {
+            last_check = millis();
 
-        if (!mqtt.connected()) {
-            mqtt.connect();
+            if (!mqtt.connected()) {
+                mqtt.connect();
+            }
         }
-    }
 
-    if ((millis() - last_status) >= MQTT_STATUS_INTERVAL) {
-        last_status = millis();
+        if ((millis() - last_status) >= MQTT_STATUS_INTERVAL) {
+            last_status = millis();
 
-        sendStatus();
+            sendStatus();
+        }
     }
 }

@@ -15,6 +15,7 @@
 #define MQTT_STATUS_TOPIC DEVICE_NAME "/status"  // will result ie. meteo/status
 #define MQTT_CMD_TOPIC DEVICE_NAME "/cmd"  // will result ie. meteo/cmd
 #define MQTT_SENSORS_TOPIC DEVICE_NAME "/sensors"  // will result ie. meteo/sensors
+#define MQTT_SENSORS_STATUS_TOPIC MQTT_SENSORS_TOPIC "/status"  // will result ie. meteo/sensors/status
 #define MQTT_WIND_TOPIC DEVICE_NAME "/wind"  // will result ie. meteo/wind
 #define MQTT_RAIN_TOPIC DEVICE_NAME "/rain"  // will result ie. meteo/rain
 #define MQTT_STATUS_ALIVE "1"
@@ -39,3 +40,4 @@
 #define NOFUSS_CHECK_INTERVAL 3600000  // 1h
 #define OTA_PORT 8266  // for local updates
 
+uint8_t sensor_state = 0b000;  // BMP, MCP, HTU

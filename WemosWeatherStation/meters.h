@@ -81,9 +81,12 @@ void metersLoop() {
 
                 json["wind_dir"] = meters.getDir();
                 json["wind_speed"] = wind_speed;
-                json["wind_chill"] = round2(meteoFunctions.windChill_c(filter[0].get(), wind_speed));
-                json["apparent"] = round2(meteoFunctions.apparentTemp_c(filter[0].get(), filter[1].get(), wind_speed));
                 json["beaufort"] = meteoFunctions.beaufort(wind_speed);
+
+                if ((sensor_state & 0b010) && (sensor_state & 0b100)) {
+                    json["wind_chill"] = round2(meteoFunctions.windChill_c(filter[1].get(), wind_speed));
+                    json["apparent"] = round2(meteoFunctions.apparentTemp_c(filter[1].get(), filter[2].get(), wind_speed));
+                }
 
 #if defined(DEBUG)
                 Serial.println("[MQTT] Sending meters data:");
