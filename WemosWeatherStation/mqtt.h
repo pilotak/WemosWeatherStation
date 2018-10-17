@@ -3,6 +3,10 @@
 
 AsyncMqttClient mqtt;
 
+#if defined(HTTP_OTA)
+    void httpUpdate(const char* url);
+#endif
+
 void sendStatus() {
     if (mqtt.connected()) {
 #if defined(DEBUG)
@@ -20,7 +24,8 @@ void sendStatus() {
         snprintf(buf, sizeof(buf), "%i", WiFi.RSSI());
         mqtt.publish(MQTT_RSSI_TOPIC, MQTT_QOS, MQTT_RETAIN, buf, strlen(buf));
 
-        char state[1] = {sensor_state + '0'};
+        char state[1];
+        state[0] = sensor_state + '0';
 
         // sensor status
         mqtt.publish(MQTT_SENSORS_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, state, 1);  // send as ASCII
@@ -39,6 +44,14 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
     Serial.println();
 #endif
+
+#if defined(HTTP_OTA)
+
+    if (strcmp(topic, MQTT_UPDATE_TOPIC) == 0) {
+        httpUpdate(payload);
+    }
+
+#endif
 }
 
 void onMqttConnect(bool sessionPresent) {
@@ -48,7 +61,10 @@ void onMqttConnect(bool sessionPresent) {
 #endif
 
     sendStatus();
-    mqtt.subscribe(MQTT_CMD_TOPIC, MQTT_QOS);
+
+#if defined(HTTP_OTA)
+    mqtt.subscribe(MQTT_UPDATE_TOPIC, MQTT_QOS);
+#endif
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {

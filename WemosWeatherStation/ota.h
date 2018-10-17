@@ -1,8 +1,21 @@
+#if defined(HTTP_OTA)
+    #include <ESP8266HTTPClient.h>
+#endif
+
+#if defined(NOFUSS_OTA) || defined(HTTP_OTA)
+    #include <ESP8266httpUpdate.h>
+#endif
+
 #if defined(NOFUSS_OTA)
-#include <ESP8266httpUpdate.h>
-#include "NoFUSSClient.h"
+    #include "NoFUSSClient.h"
+#endif
+
+#if defined(ARDUINO_OTA)
+    #include <ArduinoOTA.h>
+#endif
 
 void otaSetup() {
+#if defined(NOFUSS_OTA)
     NoFUSSClient.setServer(nofuss_server);
     NoFUSSClient.setDevice(DEVICE_NAME);
     NoFUSSClient.setVersion(FW_VERSION);
@@ -71,22 +84,9 @@ void otaSetup() {
             ota_in_progess = false;
         }
     });
-}
+#endif
 
-void otaLoop() {
-    static uint32_t last_check = 0;
-
-    if (WiFi.status() != WL_CONNECTED) return;
-
-    if ((last_check > 0) && ((millis() - last_check) < NOFUSS_CHECK_INTERVAL)) return;
-
-    last_check = millis();
-    NoFUSSClient.handle();
-}
-#elif defined(OTA)
-#include <ArduinoOTA.h>
-
-void otaSetup() {
+#if defined(ARDUINO_OTA)
     ArduinoOTA.setPort(OTA_PORT);
     ArduinoOTA.setHostname(DEVICE_NAME);
 
@@ -112,8 +112,10 @@ void otaSetup() {
         Serial.print((progress / (total / 100)));
         Serial.print("%");
     });
-
+#endif
     ArduinoOTA.onError([](ota_error_t error) {
+        ota_in_progess = false;
+#if defined(DEBUG)
         Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
         Serial.print("[OTA] Error: ");
         Serial.println(error);
@@ -133,16 +135,59 @@ void otaSetup() {
         } else if (error == OTA_END_ERROR) {
             Serial.println("[OTA] End Failed");
         }
-    });
+
 #endif
+    });
+
 
     ArduinoOTA.begin();
+#endif
 }
 
 void otaLoop() {
+#if defined(NOFUSS_OTA)
+    static uint32_t last_check = 0;
+
+    if (WiFi.status() != WL_CONNECTED) return;
+
+    if ((last_check > 0) && ((millis() - last_check) < NOFUSS_CHECK_INTERVAL)) return;
+
+    last_check = millis();
+    NoFUSSClient.handle();
+#endif
+
+#if defined(ARDUINO_OTA)
     ArduinoOTA.handle();
+#endif
 }
-#else
-void otaSetup() {}
-void otaLoop() {}
+
+#if defined(HTTP_OTA)
+void httpUpdate(const char* url) {
+    ota_in_progess = true;
+    t_httpUpdate_return ret = ESPhttpUpdate.update(url);
+
+    switch (ret) {
+        case HTTP_UPDATE_FAILED:
+            ota_in_progess = false;
+
+#if defined(DEBUG)
+            Serial.printf("[OTA] HTTP update failed: (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+#endif
+            break;
+
+        case HTTP_UPDATE_NO_UPDATES:
+            ota_in_progess = false;
+
+#if defined(DEBUG)
+            Serial.println("[OTA] HTTP update: no updates");
+#endif
+            break;
+
+        case HTTP_UPDATE_OK:
+#if defined(DEBUG)
+            Serial.println("[OTA] HTTP update: OK");
+#endif
+            break;
+    }
+}
 #endif

@@ -13,7 +13,7 @@
 #define MQTT_IP_TOPIC DEVICE_NAME "/ip"  // will result ie. meteo/ip
 #define MQTT_RSSI_TOPIC DEVICE_NAME "/rssi"  // will result ie. meteo/rssi
 #define MQTT_STATUS_TOPIC DEVICE_NAME "/status"  // will result ie. meteo/status
-#define MQTT_CMD_TOPIC DEVICE_NAME "/cmd"  // will result ie. meteo/cmd
+#define MQTT_UPDATE_TOPIC DEVICE_NAME "/update"  // will result ie. meteo/update
 #define MQTT_SENSORS_TOPIC DEVICE_NAME "/sensors"  // will result ie. meteo/sensors
 #define MQTT_SENSORS_STATUS_TOPIC MQTT_SENSORS_TOPIC "/status"  // will result ie. meteo/sensors/status
 #define MQTT_WIND_TOPIC DEVICE_NAME "/wind"  // will result ie. meteo/wind
