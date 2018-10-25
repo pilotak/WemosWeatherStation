@@ -47,7 +47,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
 #if defined(HTTP_OTA)
 
-    if (strcmp(topic, MQTT_UPDATE_TOPIC) == 0) {
+    if (strcmp(topic, MQTT_UPDATE_TOPIC) == 0 && strlen(payload) >= 4) {
         httpUpdate(payload);
     }
 

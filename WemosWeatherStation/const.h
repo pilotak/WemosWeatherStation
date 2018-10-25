@@ -13,7 +13,7 @@
 #define MQTT_IP_TOPIC DEVICE_NAME "/ip"  // will result ie. meteo/ip
 #define MQTT_RSSI_TOPIC DEVICE_NAME "/rssi"  // will result ie. meteo/rssi
 #define MQTT_STATUS_TOPIC DEVICE_NAME "/status"  // will result ie. meteo/status
-#define MQTT_UPDATE_TOPIC DEVICE_NAME "/update"  // will result ie. meteo/update
+#define MQTT_UPDATE_TOPIC DEVICE_NAME "/upgrade"  // will result ie. meteo/upgrade
 #define MQTT_SENSORS_TOPIC DEVICE_NAME "/sensors"  // will result ie. meteo/sensors
 #define MQTT_SENSORS_STATUS_TOPIC MQTT_SENSORS_TOPIC "/status"  // will result ie. meteo/sensors/status
 #define MQTT_WIND_TOPIC DEVICE_NAME "/wind"  // will result ie. meteo/wind
@@ -28,7 +28,7 @@
 #define SAMPLES 16  // READ_INTERVAL*SAMPLES=sending time in ms
 #define METERS_INTERVAL 60  // how ofter send data from meters in sec
 #define METERS_DIR_FILTERING 20  // filter last 20 samples of wind vane
-#define HEIGHT_ABOVE_SEA 415.0  // m
+#define DEFAULT_HEIGHT_ABOVE_SEA "415"  // m; important to be a string
 
 #define BMP280_ADDR BME280I2C::I2CAddr_0x76  // or BME280I2C::I2CAddr_0x77
 #define MCP9808_ADDR 0x18

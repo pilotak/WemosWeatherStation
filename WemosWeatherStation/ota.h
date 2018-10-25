@@ -164,14 +164,16 @@ void otaLoop() {
 #if defined(HTTP_OTA)
 void httpUpdate(const char* url) {
     ota_in_progess = true;
-    t_httpUpdate_return ret = ESPhttpUpdate.update(url);
+    ESPhttpUpdate.rebootOnUpdate(true);
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(String(url));
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
             ota_in_progess = false;
 
 #if defined(DEBUG)
-            Serial.printf("[OTA] HTTP update failed: (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+            Serial.printf("[OTA] HTTP update failed: (%d): %s\r\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
 #endif
             break;
 
