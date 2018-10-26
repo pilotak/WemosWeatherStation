@@ -55,6 +55,7 @@ void saveConfig() {
     } else {
 #if defined(DEBUG)
         json.printTo(Serial);
+        Serial.println();
 #endif
 
         json.printTo(configFile);

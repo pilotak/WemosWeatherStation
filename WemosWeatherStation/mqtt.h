@@ -45,13 +45,18 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     Serial.println();
 #endif
 
+
+    if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && strlen(payload) > 0) {
+        if (atoi(payload) > 0) {
+            memcpy(height_above_sea, payload, strlen(payload));
+            saveConfig();
+        }
+
+    } else if (strcmp(topic, MQTT_UPGRADE_TOPIC) == 0 && strlen(payload) >= 4) {
 #if defined(HTTP_OTA)
-
-    if (strcmp(topic, MQTT_UPDATE_TOPIC) == 0 && strlen(payload) >= 4) {
         httpUpdate(payload);
-    }
-
 #endif
+    }
 }
 
 void onMqttConnect(bool sessionPresent) {
@@ -61,9 +66,10 @@ void onMqttConnect(bool sessionPresent) {
 #endif
 
     sendStatus();
+    mqtt.subscribe(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS);
 
 #if defined(HTTP_OTA)
-    mqtt.subscribe(MQTT_UPDATE_TOPIC, MQTT_QOS);
+    mqtt.subscribe(MQTT_UPGRADE_TOPIC, MQTT_QOS);
 #endif
 }
 
