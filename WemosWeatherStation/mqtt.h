@@ -2,6 +2,7 @@
 #include <AsyncMqttClient.h>
 
 AsyncMqttClient mqtt;
+char will[40];
 
 #if defined(HTTP_OTA)
     void httpUpdate(const char* url);
@@ -13,22 +14,24 @@ void sendStatus() {
         Serial.println("[MQTT] Sending status data");
 #endif
 
-        // alive message
-        mqtt.publish(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_ALIVE, strlen(MQTT_STATUS_ALIVE));
+        StaticJsonBuffer < JSON_OBJECT_SIZE(5) > jsonBuffer;
+        JsonObject& json = jsonBuffer.createObject();
+        char message[140];
 
-        // IP address
-        mqtt.publish(MQTT_IP_TOPIC, MQTT_QOS, MQTT_RETAIN, WiFi.localIP().toString().c_str(), 16);
+        json["status"] = MQTT_STATUS_ALIVE;
+        json["ip"] = WiFi.localIP().toString();
+        json["rssi"] = WiFi.RSSI();
+        json["sensors"] = sensor_state;
 
-        // RSSI
-        char buf[5];
-        snprintf(buf, sizeof(buf), "%i", WiFi.RSSI());
-        mqtt.publish(MQTT_RSSI_TOPIC, MQTT_QOS, MQTT_RETAIN, buf, strlen(buf));
+        uint32_t len = json.printTo(message, sizeof(message));
 
-        char state[1];
-        state[0] = sensor_state + '0';
+#if defined(DEBUG)
+        Serial.println("[MQTT] Sending status data:");
+        json.prettyPrintTo(Serial);
+        Serial.println();
+#endif
 
-        // sensor status
-        mqtt.publish(MQTT_SENSORS_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, state, 1);  // send as ASCII
+        mqtt.publish(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
     }
 }
 
@@ -45,11 +48,13 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     Serial.println();
 #endif
 
-
     if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && strlen(payload) > 0) {
         if (atoi(payload) > 0) {
             memcpy(height_above_sea, payload, strlen(payload));
             saveConfig();
+
+            // confirm
+            mqtt.publish(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS, false, payload, strlen(payload));
         }
 
     } else if (strcmp(topic, MQTT_UPGRADE_TOPIC) == 0 && strlen(payload) >= 4) {
@@ -65,19 +70,24 @@ void onMqttConnect(bool sessionPresent) {
     Serial.println(sessionPresent);
 #endif
 
-    sendStatus();
     mqtt.subscribe(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS);
 
 #if defined(HTTP_OTA)
     mqtt.subscribe(MQTT_UPGRADE_TOPIC, MQTT_QOS);
 #endif
+
+    sendStatus();
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     if (!ota_in_progess) {
 #if defined(DEBUG)
-        Serial.print("[MQTT] Not connected, rc=");
-        Serial.println((int8_t)reason);
+
+        if ((int8_t)reason != 0) {
+            Serial.print("[MQTT] Not connected, rc=");
+            Serial.println((int8_t)reason);
+        }
+
 #endif
 
         if (WiFi.isConnected()) {
@@ -100,8 +110,10 @@ void mqttSetup() {
         mqtt.setServer(mqtt_server, atoi(mqtt_port));
     }
 
+    snprintf(will, sizeof(will), "{\"status\": %i}", MQTT_STATUS_DEAD);
+
     mqtt.setCredentials(mqtt_user, mqtt_password);
-    mqtt.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, MQTT_STATUS_DEAD, strlen(MQTT_STATUS_DEAD));
+    mqtt.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, will, strlen(will));
     mqtt.setKeepAlive((MQTT_STATUS_INTERVAL / 1000) + 2);  // converts ms->s + 2 sec extra, in case we have a delay
     mqtt.onConnect(onMqttConnect);
     mqtt.onDisconnect(onMqttDisconnect);
