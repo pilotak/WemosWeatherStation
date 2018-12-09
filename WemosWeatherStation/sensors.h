@@ -20,7 +20,7 @@ Adafruit_MCP9808 mcp;
 BME280I2C bmp(settings);
 HTU21D htu(HTU21D_RES_RH12_TEMP14);
 MeteoFunctions meteoFunctions;
-MovingAverageFloat <SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
+MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
 
 float round2(float value) {
     return round(value * 100.0) / 100.0;
@@ -212,7 +212,9 @@ void sensorsLoop() {
 
     counter++;
 
-    if (counter == SAMPLES) {  // time to send data
+    if (counter > READ_SAMPLES) {  // time to send data
+        counter = 0;
+
         if (mqtt.connected()) {
             StaticJsonBuffer < (JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(3)) > jsonBuffer;
 
@@ -263,7 +265,6 @@ void sensorsLoop() {
                 char message[350];
                 uint32_t len = json.printTo(message, sizeof(message));
                 mqtt.publish(MQTT_SENSORS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
-                counter = 0;
 
             } else {
 #if defined(DEBUG)
