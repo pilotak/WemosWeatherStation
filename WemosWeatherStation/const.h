@@ -12,7 +12,10 @@
 #define MQTT_STATUS_INTERVAL 30000
 #define MQTT_STATUS_TOPIC DEVICE_NAME "/status"  // will result ie. meteo/status
 #define MQTT_UPGRADE_TOPIC DEVICE_NAME "/upgrade"  // will result ie. meteo/upgrade
+#define MQTT_UPGRADE_STATUS_TOPIC DEVICE_NAME "/upgrade/status"  // will result ie. meteo/upgrade/status
+#define MQTT_RESTART_TOPIC DEVICE_NAME "/restart"  // will result ie. meteo/restart
 #define MQTT_HEIGHT_UPDATE_TOPIC DEVICE_NAME "/height"  // will result ie. meteo/height
+#define MQTT_HEIGHT_NEW_TOPIC DEVICE_NAME "/height/new"  // will result ie. meteo/height/new
 #define MQTT_SENSORS_TOPIC DEVICE_NAME "/sensors"  // will result ie. meteo/sensors
 #define MQTT_WIND_TOPIC DEVICE_NAME "/wind"  // will result ie. meteo/wind
 #define MQTT_RAIN_TOPIC DEVICE_NAME "/rain"  // will result ie. meteo/rain

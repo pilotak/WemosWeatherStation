@@ -7,7 +7,7 @@
 #include "meters.h"
 
 void setup() {
-#if defined(DEBUG)
+#if defined(DEBUG) || defined(DEBUG_ESP_PORT)
     Serial.begin(115200);
     Serial.println();
 #endif
@@ -28,4 +28,13 @@ void loop() {
         sensorsLoop();
         metersLoop();
     }
+
+#if defined(HTTP_OTA)
+
+    if (do_http_update) {
+        do_http_update = false;
+        httpUpdate();
+    }
+
+#endif
 }

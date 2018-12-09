@@ -11,6 +11,11 @@ char mqtt_user[16] = {0};
 char mqtt_password[32] = {0};
 char height_above_sea[8] = DEFAULT_HEIGHT_ABOVE_SEA;
 
+#if defined(HTTP_OTA)
+bool do_http_update = false;
+char http_ota_url[100];
+#endif
+
 #if defined(NOFUSS_OTA)
     char nofuss_server[40];
 #endif

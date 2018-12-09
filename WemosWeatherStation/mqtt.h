@@ -48,19 +48,33 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     Serial.println();
 #endif
 
-    if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && strlen(payload) > 0) {
+    if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && len > 0) {
         if (atoi(payload) > 0) {
-            memcpy(height_above_sea, payload, strlen(payload));
+            memcpy(height_above_sea, payload, len);
             saveConfig();
 
             // confirm
-            mqtt.publish(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS, false, payload, strlen(payload));
+            mqtt.publish(MQTT_HEIGHT_NEW_TOPIC, MQTT_QOS, false, payload, len);
         }
 
-    } else if (strcmp(topic, MQTT_UPGRADE_TOPIC) == 0 && strlen(payload) >= 4) {
+    } else if (strcmp(topic, MQTT_UPGRADE_TOPIC) == 0 && len >= 4) {
 #if defined(HTTP_OTA)
-        httpUpdate(payload);
+
+        if (len > sizeof(http_ota_url)) {
+            mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, "URL too long");
+
+        } else {
+            memset(http_ota_url, 0, sizeof(http_ota_url));
+            memcpy(http_ota_url, payload, len);
+            do_http_update = true;
+        }
+
 #endif
+
+    } else if (strcmp(topic, MQTT_RESTART_TOPIC) == 0) {
+        delay(2000);
+        ESP.restart();
+        delay(5000);
     }
 }
 
@@ -71,6 +85,7 @@ void onMqttConnect(bool sessionPresent) {
 #endif
 
     mqtt.subscribe(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS);
+    mqtt.subscribe(MQTT_RESTART_TOPIC, MQTT_QOS);
 
 #if defined(HTTP_OTA)
     mqtt.subscribe(MQTT_UPGRADE_TOPIC, MQTT_QOS);

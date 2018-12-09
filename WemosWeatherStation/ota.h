@@ -100,8 +100,8 @@ void otaSetup() {
 #if defined(DEBUG)
         Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
         Serial.println("[OTA] End");
+        delay(200);
 #endif
-        ota_in_progess = false;
     });
 
 #if defined(DEBUG)
@@ -115,6 +115,7 @@ void otaSetup() {
 #endif
     ArduinoOTA.onError([](ota_error_t error) {
         ota_in_progess = false;
+
 #if defined(DEBUG)
         Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
         Serial.print("[OTA] Error: ");
@@ -162,15 +163,25 @@ void otaLoop() {
 }
 
 #if defined(HTTP_OTA)
-void httpUpdate(const char* url) {
+void httpUpdate() {
+    char msg[127];
+    uint32_t len = 0;
     ota_in_progess = true;
-    ESPhttpUpdate.rebootOnUpdate(true);
+    ESPhttpUpdate.rebootOnUpdate(false);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(String(url));
+#if defined(DEBUG)
+    Serial.print("[OTA] Starting HTTP update from: ");
+    Serial.println(http_ota_url);
+#endif
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(http_ota_url, FW_VERSION);
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
             ota_in_progess = false;
+
+            len = snprintf(msg, sizeof(msg), "%s", ESPhttpUpdate.getLastErrorString().c_str());
+            mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, msg, len);
 
 #if defined(DEBUG)
             Serial.printf("[OTA] HTTP update failed: (%d): %s\r\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
@@ -179,6 +190,7 @@ void httpUpdate(const char* url) {
 
         case HTTP_UPDATE_NO_UPDATES:
             ota_in_progess = false;
+            mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, "No updates");
 
 #if defined(DEBUG)
             Serial.println("[OTA] HTTP update: no updates");
@@ -186,9 +198,15 @@ void httpUpdate(const char* url) {
             break;
 
         case HTTP_UPDATE_OK:
+            mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, "OK");
+
 #if defined(DEBUG)
             Serial.println("[OTA] HTTP update: OK");
 #endif
+
+            delay(2000);
+            ESP.restart();
+            delay(5000);
             break;
     }
 }
