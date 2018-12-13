@@ -10,10 +10,6 @@ char will[40];
 
 void sendStatus() {
     if (mqtt.connected()) {
-#if defined(DEBUG)
-        Serial.println("[MQTT] Sending status data");
-#endif
-
         StaticJsonBuffer < JSON_OBJECT_SIZE(5) > jsonBuffer;
         JsonObject& json = jsonBuffer.createObject();
         char message[140];
