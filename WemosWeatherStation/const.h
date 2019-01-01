@@ -5,7 +5,7 @@
 #define CONFIG_AP_SSID DEVICE_NAME "_config"
 #define CONFIG_AP_PASSWORD "StrongPasswordHere"
 
-#define DEFAULT_MQTT_PORT "1883"  // important to be a string
+#define DEFAULT_MQTT_PORT "1883"  // important to be a string; can be changed in WifiManager
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
 #define MQTT_CHECK_INTERVAL 5000
@@ -29,7 +29,7 @@
 #define READ_SAMPLES 16  // READ_INTERVAL*SAMPLES=sending time in ms
 #define METERS_INTERVAL 60  // how ofter send data from meters in sec
 #define METERS_DIR_FILTERING 16  // filter last 16 samples of wind vane
-#define DEFAULT_HEIGHT_ABOVE_SEA "415"  // m; important to be a string
+#define DEFAULT_HEIGHT_ABOVE_SEA "415"  // m; important to be a string; can be changed in WifiManager or via MQTT
 
 #define BMP280_ADDR BME280I2C::I2CAddr_0x76  // or BME280I2C::I2CAddr_0x77
 #define MCP9808_ADDR 0x18
