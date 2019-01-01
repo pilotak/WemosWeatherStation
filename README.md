@@ -1,7 +1,7 @@
 # WeMos weather station
 [![Build Status](https://travis-ci.org/pilotak/WemosWeatherStation.svg?branch=master)](https://travis-ci.org/pilotak/WemosWeatherStation)
 
-An all-in-one ESP8266 based weather station. Hardware configuration is split into two parts due to easier maintenance in case of ESP8266 failure and fuse replacement (the board outside is protected against lighting). FW can easily be compiled by PlatformIO or Arduino IDE if necessary, otherwise can be downloaded in [release page](./releases).
+An all-in-one ESP8266 based weather station. Hardware configuration is split into two parts due to easier maintenance in case of ESP8266 failure and fuse replacement (the board outside is protected against lighting). FW can easily be compiled by PlatformIO or Arduino IDE if necessary, otherwise can be downloaded in **Releases**.
 
 Data are sent over MQTT where [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) is waiting to push data to [InfluxDB](https://www.influxdata.com/time-series-platform/influxdb/) and [Grafana](https://grafana.com/) tool to render charts.
 
@@ -66,12 +66,12 @@ As a data send link to `*.bin` upgrade package and it will reply in topic `name/
 As a data send new height and it will confirm in topic `name/height/new`
 
 <table border="0">
- <tr>
-    <td><img alt="Wemos meteo 1"src="./Images/WeMos-meteo_1.jpg"/></td>
-    <td><img alt="Wemos meteo 2"src="./Images/WeMos-meteo_2.jpg"/></td>
+ <tr style="border:0">
+    <td style="border:0"><img alt="Wemos meteo 1"src="./Images/WeMos-meteo_1.jpg"/></td>
+    <td style="border:0"><img alt="Wemos meteo 2"src="./Images/WeMos-meteo_2.jpg"/></td>
  </tr>
- <tr>
-    <td colspan="2"><img alt="Wemos meteo 3"src="./Images/WeMos-meteo_3.jpg"/></td>
+ <tr style="border:0">
+    <td style="border:0" colspan="2"><img alt="Wemos meteo 3"src="./Images/WeMos-meteo_3.jpg"/></td>
  </tr>
 </table>
 
@@ -79,10 +79,10 @@ As a data send new height and it will confirm in topic `name/height/new`
 Fits directly into radiation shield, just connect wind sensors, rain gauge bucket and you ready to measure. For future i have included extention connector for measuring sun light and UV index.
 
 <table border="0">
- <tr>
-    <td><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
-    <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
-    <td><img alt="WeatherBoard 3"src="./Images/WeatherBoard_3.jpg"/></td>
+ <tr style="border:0">
+    <td style="border:0"><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
+    <td style="border:0"><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
+    <td style="border:0"><img alt="WeatherBoard 3"src="./Images/WeatherBoard_3.jpg"/></td>
  </tr>
 </table>
 
