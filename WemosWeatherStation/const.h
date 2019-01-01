@@ -2,7 +2,7 @@
 #define FW_VERSION "1.0.0"
 
 #define CONFIG_PATH "/config.json"
-#define CONFIG_AP_SSID DEVICE_NAME "Config"
+#define CONFIG_AP_SSID DEVICE_NAME "_config"
 #define CONFIG_AP_PASSWORD "StrongPasswordHere"
 
 #define DEFAULT_MQTT_PORT "1883"  // important to be a string
@@ -15,7 +15,7 @@
 #define MQTT_UPGRADE_STATUS_TOPIC DEVICE_NAME "/upgrade/status"  // will result ie. meteo/upgrade/status
 #define MQTT_RESTART_TOPIC DEVICE_NAME "/restart"  // will result ie. meteo/restart
 #define MQTT_HEIGHT_UPDATE_TOPIC DEVICE_NAME "/height"  // will result ie. meteo/height
-#define MQTT_HEIGHT_NEW_TOPIC DEVICE_NAME "/height/new"  // will result ie. meteo/height/new
+#define MQTT_HEIGHT_NEW_TOPIC MQTT_HEIGHT_UPDATE_TOPIC "/new"  // will result ie. meteo/height/new
 #define MQTT_SENSORS_TOPIC DEVICE_NAME "/sensors"  // will result ie. meteo/sensors
 #define MQTT_WIND_TOPIC DEVICE_NAME "/wind"  // will result ie. meteo/wind
 #define MQTT_RAIN_TOPIC DEVICE_NAME "/rain"  // will result ie. meteo/rain
