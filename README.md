@@ -78,9 +78,6 @@ As a data send new height and it will confirm in topic `name/height/new`
 ## Weather board
 Fits directly into radiation shield, just connect wind sensors, rain gauge bucket and you ready to measure. For future i have included extention connector for measuring sun light and UV index.
 
-![Weather board 1](./Images/WeatherBoard_1.jpg) ![Weather board 2](./Images/WeatherBoard_2.jpg)
-![Weather board 3](./Images/WeatherBoard_3.jpg)
-
 <table border="0">
  <tr>
     <td><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
