@@ -52,9 +52,9 @@ If any of the value can't be calculated, it sends `NaN`
   "heat": 3.97,
   "cloud": 390.13,
   "temp": [
-    5.3,   // MCP9808
-    5.36,  // BMP280
-    5.43   // HTU21D
+    5.3,
+    5.36,
+    5.43
   ]
 }
 ```
@@ -65,14 +65,29 @@ As a data send link to `*.bin` upgrade package and it will reply in topic `name/
 #### `name/height`
 As a data send new height and it will confirm in topic `name/height/new`
 
-![Wemos meteo 1](./Images/WeMos-meteo_1.jpg) ![Wemos meteo 2](./Images/WeMos-meteo_2.jpg)
-![Wemos meteo 3](./Images/WeMos-meteo_3.jpg)
+<table border="0">
+ <tr>
+    <td><img alt="Wemos meteo 1"src="./Images/WeMos-meteo_1.jpg"/></td>
+    <td><img alt="Wemos meteo 2"src="./Images/WeMos-meteo_2.jpg"/></td>
+ </tr>
+ <tr>
+    <td colspan="2"><img alt="Wemos meteo 3"src="./Images/WeMos-meteo_3.jpg"/></td>
+ </tr>
+</table>
 
 ## Weather board
 Fits directly into radiation shield, just connect wind sensors, rain gauge bucket and you ready to measure. For future i have included extention connector for measuring sun light and UV index.
 
 ![Weather board 1](./Images/WeatherBoard_1.jpg) ![Weather board 2](./Images/WeatherBoard_2.jpg)
 ![Weather board 3](./Images/WeatherBoard_3.jpg)
+
+<table border="0">
+ <tr>
+    <td><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
+    <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
+    <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
+ </tr>
+</table>
 
 ## Server configuration
 Below you can find a `docker-compose.yaml` file for fast integration onto your server.
