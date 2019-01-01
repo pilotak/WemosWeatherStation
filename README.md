@@ -82,7 +82,7 @@ Fits directly into radiation shield, just connect wind sensors, rain gauge bucke
  <tr>
     <td><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
     <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
-    <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
+    <td><img alt="WeatherBoard 3"src="./Images/WeatherBoard_3.jpg"/></td>
  </tr>
 </table>
 
