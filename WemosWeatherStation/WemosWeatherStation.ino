@@ -24,7 +24,10 @@ SOFTWARE.
 #include "ota.h"
 #include "button.h"
 #include "sensors.h"
-#include "meters.h"
+
+#if defined(HAS_METERS)
+    #include "meters.h"
+#endif
 
 void setup() {
 #if defined(DEBUG) || defined(DEBUG_ESP_PORT)
@@ -36,7 +39,10 @@ void setup() {
     otaSetup();
     mqttSetup();
     sensorsSetup();
+
+#if defined(HAS_METERS)
     metersSetup();
+#endif
 }
 
 void loop() {
@@ -46,7 +52,10 @@ void loop() {
         buttonLoop();
         mqttLoop();
         sensorsLoop();
+
+#if defined(HAS_METERS)
         metersLoop();
+#endif
     }
 
 #if defined(HTTP_OTA)

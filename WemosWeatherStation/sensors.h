@@ -1,9 +1,14 @@
 #include <Wire.h>
-#include <BME280I2C.h>
-#include "Adafruit_MCP9808.h"
-#include <HTU21D.h>
 #include "MeteoFunctions.h"
 #include "MovingAverageFloat.h"
+
+#if defined(SENSOR_MCP9808)
+    #include "Adafruit_MCP9808.h"
+    Adafruit_MCP9808 mcp;
+#endif
+
+#if defined(SENSOR_BMP280)
+#include <BME280I2C.h>
 
 BME280I2C::Settings settings(
     BME280::OSR_X1,
@@ -16,9 +21,14 @@ BME280I2C::Settings settings(
     BMP280_ADDR
 );
 
-Adafruit_MCP9808 mcp;
 BME280I2C bmp(settings);
-HTU21D htu(HTU21D_RES_RH12_TEMP14);
+#endif
+
+#if defined(SENSOR_HTU21D)
+    #include <HTU21D.h>
+    HTU21D htu(HTU21D_RES_RH12_TEMP14);
+#endif
+
 MeteoFunctions meteoFunctions;
 MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
 
@@ -29,16 +39,7 @@ float round2(float value) {
 void sensorsSetup() {
     Wire.begin(SDA, SCL);
 
-    if (bmp.begin()) {
-        sensor_state |= (1 << 0);
-
-    } else {
-        sensor_state &= ~(1 << 0);
-
-#if defined(DEBUG)
-        Serial.println("[SENSOR] BMP280 did not respond. Please check wiring.");
-#endif
-    }
+#if defined(SENSOR_MCP9808)
 
     if (mcp.begin(MCP9808_ADDR, &Wire)) {
         sensor_state |= (1 << 1);
@@ -53,6 +54,29 @@ void sensorsSetup() {
 #endif
     }
 
+#else
+    sensor_state &= ~(1 << 1);
+#endif
+
+#if defined(SENSOR_BMP280)
+
+    if (bmp.begin()) {
+        sensor_state |= (1 << 0);
+
+    } else {
+        sensor_state &= ~(1 << 0);
+
+#if defined(DEBUG)
+        Serial.println("[SENSOR] BMP280 did not respond. Please check wiring.");
+#endif
+    }
+
+#else
+    sensor_state &= ~(1 << 0);
+#endif
+
+#if defined(SENSOR_HTU21D)
+
     if (htu.begin(SDA, SCL)) {
         sensor_state |= (1 << 2);
 
@@ -63,6 +87,10 @@ void sensorsSetup() {
         Serial.println("[SENSOR] HTU21D did not respond. Please check wiring.");
 #endif
     }
+
+#else
+    sensor_state &= ~(1 << 2);
+#endif
 }
 
 void sensorsLoop() {
@@ -83,6 +111,35 @@ void sensorsLoop() {
     float temp_htu = NAN;
     float humidity = NAN;
 
+#if defined(SENSOR_MCP9808)
+    temp_mcp = mcp.readTempC();
+
+    if (!isnan(temp_mcp)) {
+        if (((sensor_state & 0b010) >> 1) == 0) {
+            sensor_state |= (1 << 1);
+
+            filter[1].reset();
+
+#if defined(DEBUG)
+            Serial.println("[SENSOR] MCP9808 is back on.");
+#endif
+        }
+
+        temp_mcp = filter[1].add(temp_mcp);
+
+    } else {
+        if (sensor_state & 0b100) {
+            sensor_state &= ~(1 << 1);  // MCP not available
+
+#if defined(DEBUG)
+            Serial.println("[SENSOR] MCP9808 did not respond. Please check wiring.");
+#endif
+        }
+    }
+
+#endif
+
+#if defined(SENSOR_BMP280)
     temp_bmp = bmp.temp();
 
     if (!isnan(temp_bmp)) {
@@ -133,32 +190,9 @@ void sensorsLoop() {
         }
     }
 
-
-    temp_mcp = mcp.readTempC();
-
-    if (!isnan(temp_mcp)) {
-        if (((sensor_state & 0b010) >> 1) == 0) {
-            sensor_state |= (1 << 1);
-
-            filter[1].reset();
-
-#if defined(DEBUG)
-            Serial.println("[SENSOR] MCP9808 is back on.");
 #endif
-        }
 
-        temp_mcp = filter[1].add(temp_mcp);
-
-    } else {
-        if (sensor_state & 0b100) {
-            sensor_state &= ~(1 << 1);  // MCP not available
-
-#if defined(DEBUG)
-            Serial.println("[SENSOR] MCP9808 did not respond. Please check wiring.");
-#endif
-        }
-    }
-
+#if defined(SENSOR_HTU21D)
     temp_htu = htu.readTemperature();
 
     if (temp_htu < 255.0) {
@@ -189,25 +223,38 @@ void sensorsLoop() {
         temp_htu = NAN;
     }
 
+#endif
+
 #if defined(DEBUG)
+#if defined(SENSOR_BMP280)
     Serial.print("[SENSOR] Pressure: ");
     Serial.print(abs_pressure);
     Serial.print("=");
     Serial.print(rel_pressure);
     Serial.println(" Pa");
+#endif
 
+#if defined(SENSOR_MCP9808)
     Serial.print("[SENSOR] Temp MCP: ");
     Serial.print(temp_mcp);
+#endif
+
+#if defined(SENSOR_BMP280)
     Serial.print(", BMP:");
     Serial.print(temp_bmp);
+#endif
+
+#if defined(SENSOR_HTU21D)
     Serial.print(", HTU:");
     Serial.print(temp_htu);
     Serial.println(" C");
-
     Serial.print("[SENSOR] Humidity: ");
     Serial.print(humidity);
     Serial.println(" %");
     Serial.println();
+#else
+    Serial.println();
+#endif
 #endif
 
     counter++;
@@ -219,10 +266,15 @@ void sensorsLoop() {
             StaticJsonBuffer < (JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(3)) > jsonBuffer;
 
             JsonObject& json = jsonBuffer.createObject();
+#if defined(SENSOR_HTU21D)
 
             if (!isnan(humidity)) {
                 json["humidity"] = round2(humidity);
             }
+
+#endif
+
+#if defined(SENSOR_BMP280)
 
             if (!isnan(rel_pressure)) {
                 json["pressure_rel"] = round2(rel_pressure / 100.0);
@@ -232,28 +284,45 @@ void sensorsLoop() {
                 json["pressure_abs"] = round2(abs_pressure / 100.0);
             }
 
-            if (!isnan(temp_mcp) && !isnan(humidity)) {
+#endif
+#if defined(SENSOR_HTU21D)
+
+            if (!isnan(temp_htu) && !isnan(humidity)) {
                 json["dew"] = round2(meteoFunctions.dewPoint_c(temp_mcp, humidity));
                 json["humidex"] = round2(meteoFunctions.humidex_c(temp_mcp, humidity));
                 json["heat"] = round2(meteoFunctions.heatIndex_c(temp_mcp, humidity));
                 json["cloud"] = round2(meteoFunctions.cloudBase_m(temp_mcp, humidity));
             }
 
+#endif
+#if defined(SENSOR_MCP9808) || defined(SENSOR_BMP280) || defined(SENSOR_HTU21D)
+
             if (!isnan(temp_mcp) && !isnan(temp_bmp) && !isnan(temp_htu)) {
                 JsonArray& temperatures = json.createNestedArray("temp");
+#if defined(SENSOR_MCP9808)
 
                 if (!isnan(temp_mcp)) {
                     temperatures.add(round2(temp_mcp));
                 }
 
+#endif
+#if defined(SENSOR_BMP280)
+
                 if (!isnan(temp_bmp)) {
                     temperatures.add(round2(temp_bmp));
                 }
 
+#endif
+#if defined(SENSOR_HTU21D)
+
                 if (!isnan(temp_htu)) {
                     temperatures.add(round2(temp_htu));
                 }
+
+#endif
             }
+
+#endif
 
             if (json.size() > 0) {
 #if defined(DEBUG)

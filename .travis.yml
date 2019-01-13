@@ -12,7 +12,7 @@ install:
   - platformio update
 
 script:
-  - platformio run -e WemosWeatherStation -e WemosWeatherStation_debug
+  - platformio run -e WemosWeatherStation
 
 notifications:
   email:

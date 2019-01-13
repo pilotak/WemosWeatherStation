@@ -45,6 +45,8 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 #endif
 
     if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && len > 0) {
+#if defined(SENSOR_BMP280)
+
         if (atoi(payload) > 0) {
             memcpy(height_above_sea, payload, len);
             saveConfig();
@@ -52,6 +54,8 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
             // confirm
             mqtt.publish(MQTT_HEIGHT_NEW_TOPIC, MQTT_QOS, false, payload, len);
         }
+
+#endif
 
     } else if (strcmp(topic, MQTT_UPGRADE_TOPIC) == 0 && len >= 4) {
 #if defined(HTTP_OTA)
@@ -80,7 +84,9 @@ void onMqttConnect(bool sessionPresent) {
     Serial.println(sessionPresent);
 #endif
 
+#if defined(SENSOR_BMP280)
     mqtt.subscribe(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS);
+#endif
     mqtt.subscribe(MQTT_RESTART_TOPIC, MQTT_QOS);
 
 #if defined(HTTP_OTA)
