@@ -38,6 +38,7 @@ float round2(float value) {
 
 void sensorsSetup() {
     Wire.begin(SDA, SCL);
+    Wire.setClock(I2C_SPEED);
 
 #if defined(SENSOR_MCP9808)
 
