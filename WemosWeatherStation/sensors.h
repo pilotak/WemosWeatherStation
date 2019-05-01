@@ -5,15 +5,18 @@
 
 #if defined(SENSOR_BMP280)
 #include <BME280I2C.h>
-BME280I2C bmp([] {BME280::OSR_X1,
-                  BME280::OSR_X1,
-                  BME280::OSR_X1,
-                  BME280::Mode_Forced,
-                  BME280::StandbyTime_1000ms,
-                  BME280::Filter_8,
-                  BME280::SpiEnable_False,
-                  BMP280_ADDR
-                 });
+BME280I2C::Settings settings(
+    BME280::OSR_X1,
+    BME280::OSR_X1,
+    BME280::OSR_X1,
+    BME280::Mode_Forced,
+    BME280::StandbyTime_1000ms,
+    BME280::Filter_8,
+    BME280::SpiEnable_False,
+    BMP280_ADDR
+);
+
+BME280I2C bmp(settings);
 #endif
 
 #if defined(SENSOR_HTU21D)
