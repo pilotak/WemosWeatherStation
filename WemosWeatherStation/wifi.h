@@ -1,52 +1,45 @@
-#include <FS.h>
-#include <ESP8266WiFi.h>
-#include <DNSServer.h>
-#include <ESP8266WebServer.h>
-#include <WiFiManager.h>
-#include <ArduinoJson.h>
-
-char mqtt_server[40];
-char mqtt_port[6] = DEFAULT_MQTT_PORT;
-char mqtt_user[16] = {0};
-char mqtt_password[32] = {0};
-
-#if defined(SENSOR_BMP280)
-    char height_above_sea[8] = DEFAULT_HEIGHT_ABOVE_SEA;
+void onWifiConnect(const WiFiEventStationModeGotIP& event) {
+#if defined(DEBUG)
+    Serial.println("[WIFI] Connected");
+    Serial.print("[WIFI] Local IP: ");
+    Serial.println(WiFi.localIP());
 #endif
 
-#if defined(HTTP_OTA)
-    bool do_http_update = false;
-    char http_ota_url[100];
+    connectToMqtt();
+}
+
+void onWifiDisconnect(const WiFiEventStationModeDisconnected& event) {
+#if defined(DEBUG)
+    Serial.println("[WIFI] Disconnected");
 #endif
-
-#if defined(NOFUSS_OTA)
-    char nofuss_server[40];
-#endif
-
-WiFiEventHandler wifiDisconnectHandler;
-bool ota_in_progess = false;
-
-#if defined(NOFUSS_OTA)
-    WiFiManagerParameter custom_nofuss_server("nofuss_server", "NoFUSS server", nofuss_server, sizeof(nofuss_server));
-#endif
-
-bool should_save_config = false;
-
-void saveConfigCallback() {
-    should_save_config = true;
+    mqttReconnectTimer.detach();
 }
 
 void saveConfig() {
 #if defined(DEBUG)
-    Serial.println("[FS] saving config");
+    Serial.println("[FS] Saving config");
 #endif
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
+    // read updated parameters
+    strncpy(mqtt_server, custom_mqtt_server.getValue(), sizeof(mqtt_server));
+    strncpy(mqtt_port, custom_mqtt_port.getValue(), sizeof(mqtt_port));
+    strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
+    strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
+
+#if defined(SENSOR_BMP280)
+    strncpy(height_above_sea, custom_height_above_sea.getValue(), sizeof(height_above_sea));
+#endif
+
+#if defined(NOFUSS_OTA)
+    strncpy(nofuss_server, custom_nofuss_server.getValue(), sizeof(nofuss_server));
+#endif
+
+    DynamicJsonDocument json(1024);
     json["mqtt_server"] = mqtt_server;
     json["mqtt_port"] = mqtt_port;
     json["mqtt_user"] = mqtt_user;
     json["mqtt_password"] = mqtt_password;
+
 #if defined(SENSOR_BMP280)
     json["height_above_sea"] = height_above_sea;
 #endif
@@ -64,89 +57,49 @@ void saveConfig() {
 
     } else {
 #if defined(DEBUG)
-        json.printTo(Serial);
+        serializeJson(json, Serial);
         Serial.println();
 #endif
 
-        json.printTo(configFile);
+        serializeJson(json, configFile);
     }
 
     configFile.close();
+
+    wifiManager.reboot();
 }
 
-void configPortal(bool mode) {
-    WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT server", mqtt_server, sizeof(mqtt_server));
-    WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT port", mqtt_port, sizeof(mqtt_port));
-    WiFiManagerParameter custom_mqtt_user("mqtt_user", "MQTT user", mqtt_user, sizeof(mqtt_user));
-    WiFiManagerParameter custom_mqtt_password("mqtt_password", "MQTT password", mqtt_password, sizeof(mqtt_password));
 
-#if defined(SENSOR_BMP280)
-    WiFiManagerParameter custom_height_above_sea("height_above_sea", "Height above sea (m)", height_above_sea, sizeof(height_above_sea));
-#endif
-
-    WiFiManager wifiManager;
-    wifiManager.setSaveConfigCallback(saveConfigCallback);
-
+void startConfigPortal() {
 #if defined(DEBUG)
-    wifiManager.setDebugOutput(true);
-#else
-    wifiManager.setDebugOutput(false);
+    Serial.println("[WIFI] Starting configuration portal");
 #endif
+    wifiManager.stopWebPortal();
+    wifiManager.setConfigPortalBlocking(true);
 
-    wifiManager.addParameter(&custom_mqtt_server);
-    wifiManager.addParameter(&custom_mqtt_port);
-    wifiManager.addParameter(&custom_mqtt_user);
-    wifiManager.addParameter(&custom_mqtt_password);
-#if defined(SENSOR_BMP280)
-    wifiManager.addParameter(&custom_height_above_sea);
-#endif
-
-#if defined(NOFUSS_OTA)
-    wifiManager.addParameter(&custom_nofuss_server);
-#endif
-
-    if (mode) {
-        if (!wifiManager.autoConnect(CONFIG_AP_SSID, CONFIG_AP_PASSWORD)) {
+    if (!wifiManager.startConfigPortal(CONFIG_AP_SSID, CONFIG_AP_PASSWORD)) {
 #if defined(DEBUG)
-            Serial.println("[WIFI] Failed to connect.");
+        Serial.println("[WIFI] Failed create config AP");
 #endif
-            delay(2000);
-            ESP.restart();
-            delay(5000);
-        }
-
-    } else {
-        if (!wifiManager.startConfigPortal(CONFIG_AP_SSID, CONFIG_AP_PASSWORD)) {
-#if defined(DEBUG)
-            Serial.println("[WIFI] Failed create AP");
-#endif
-            delay(2000);
-            ESP.restart();
-            delay(5000);
-        }
     }
 
-    if (should_save_config) {
-        // read updated parameters
-        strncpy(mqtt_server, custom_mqtt_server.getValue(), sizeof(mqtt_server));
-        strncpy(mqtt_port, custom_mqtt_port.getValue(), sizeof(mqtt_port));
-        strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
-        strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
-#if defined(SENSOR_BMP280)
-        strncpy(height_above_sea, custom_height_above_sea.getValue(), sizeof(height_above_sea));
+#if defined(DEBUG)
+    Serial.println("[WIFI] Ending configuration portal");
 #endif
 
-#if defined(NOFUSS_OTA)
-        strncpy(nofuss_server, custom_nofuss_server.getValue(), sizeof(nofuss_server));
-#endif
-
-        saveConfig();
-    }
+    wifiManager.setConfigPortalBlocking(false);
 }
 
-void wifiSetup() {
-    WiFi.hostname(DEVICE_NAME);
+void endConfigPortal() {
+#if defined(DEBUG)
+    Serial.println("[WIFI] Force ending configuration portal");
+#endif
 
+    wifiManager.stopConfigPortal();
+    wifiManager.startWebPortal();
+}
+
+bool loadDefaultConfig() {
 #if defined(DEBUG)
     Serial.println("[FS] mounting...");
 #endif
@@ -173,15 +126,21 @@ void wifiSetup() {
                 std::unique_ptr<char[]> buf(new char[size]);
 
                 configFile.readBytes(buf.get(), size);
-                DynamicJsonBuffer jsonBuffer;
-                JsonObject& json = jsonBuffer.parseObject(buf.get());
+                DynamicJsonDocument json(1024);
+                DeserializationError error = deserializeJson(json, buf.get());
+
 
 #if defined(DEBUG)
-                json.prettyPrintTo(Serial);
+                serializeJsonPretty(json, Serial);
                 Serial.println();
 #endif
 
-                if (json.success()) {
+                if (error) {
+#if defined(DEBUG)
+                    Serial.println("[FS] Parsings JSON failed");
+#endif
+
+                } else {
 #if defined(DEBUG)
                     Serial.println("[FS] JSON parsed");
 #endif
@@ -190,7 +149,7 @@ void wifiSetup() {
                     strncpy(mqtt_port, json["mqtt_port"], sizeof(mqtt_port));
                     strncpy(mqtt_user, json["mqtt_user"], sizeof(mqtt_user));
                     strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
-                    
+
 #if defined(SENSOR_BMP280)
                     strncpy(height_above_sea, json["height_above_sea"], sizeof(height_above_sea));
 #endif
@@ -198,11 +157,7 @@ void wifiSetup() {
 #if defined(NOFUSS_OTA)
                     strncpy(nofuss_server, json["nofuss_server"], sizeof(nofuss_server));
 #endif
-
-                } else {
-#if defined(DEBUG)
-                    Serial.println("[FS] Parsings JSON failed");
-#endif
+                    return true;
                 }
             }
         }
@@ -213,13 +168,50 @@ void wifiSetup() {
 #endif
     }
 
+    return false;
+}
 
-    configPortal(true);
-    should_save_config = false;
+void wifiSetup() {
+    wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
+    wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
+
+    wifiManager.setHostname(DEVICE_NAME);
+    wifiManager.setWiFiAutoReconnect(true);
+    wifiManager.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT);
+    wifiManager.setConfigPortalBlocking(false);
+    wifiManager.setEnableConfigPortal(false);
+    wifiManager.setSaveParamsCallback(saveConfig);
 
 #if defined(DEBUG)
-    Serial.println("[WIFI] Connected");
-    Serial.print("[WIFI] Local IP: ");
-    Serial.println(WiFi.localIP());
+    wifiManager.setDebugOutput(true);
+#else
+    wifiManager.setDebugOutput(false);
 #endif
+
+    custom_mqtt_server.setValue(mqtt_server, sizeof(mqtt_server));
+    custom_mqtt_port.setValue(mqtt_port, sizeof(mqtt_port));
+    custom_mqtt_user.setValue(mqtt_user, sizeof(mqtt_user));
+    custom_mqtt_password.setValue(mqtt_password, sizeof(mqtt_password));
+
+    wifiManager.addParameter(&custom_mqtt_server);
+    wifiManager.addParameter(&custom_mqtt_port);
+    wifiManager.addParameter(&custom_mqtt_user);
+    wifiManager.addParameter(&custom_mqtt_password);
+
+#if defined(SENSOR_BMP280)
+    custom_height_above_sea.setValue(height_above_sea, sizeof(height_above_sea));
+    wifiManager.addParameter(&custom_height_above_sea);
+#endif
+
+#if defined(NOFUSS_OTA)
+    custom_nofuss_server.setValue(nofuss_server, sizeof(nofuss_server));
+    wifiManager.addParameter(&custom_nofuss_server);
+#endif
+
+#if defined(DEBUG)
+    Serial.print("[WIFI] Connecting to: ");
+    Serial.println(WiFi.SSID());
+#endif
+
+    wifiManager.autoConnect(CONFIG_AP_SSID, CONFIG_AP_PASSWORD);
 }

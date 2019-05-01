@@ -1,29 +1,18 @@
-#include <ESP8266WiFi.h>
-#include <AsyncMqttClient.h>
-
-AsyncMqttClient mqtt;
-char will[40];
-
-#if defined(HTTP_OTA)
-    void httpUpdate(const char* url);
-#endif
-
 void sendStatus() {
     if (mqtt.connected()) {
-        StaticJsonBuffer < JSON_OBJECT_SIZE(5) > jsonBuffer;
-        JsonObject& json = jsonBuffer.createObject();
-        char message[140];
+        StaticJsonDocument < JSON_OBJECT_SIZE(5) > json;
+        char message[144];
 
         json["status"] = MQTT_STATUS_ALIVE;
         json["ip"] = WiFi.localIP().toString();
-        json["rssi"] = WiFi.RSSI();
+        json["signal"] = wifiManager.getRSSIasQuality(WiFi.RSSI());
         json["sensors"] = sensor_state;
 
-        uint32_t len = json.printTo(message, sizeof(message));
+        uint32_t len = serializeJson(json, message, sizeof(message));
 
 #if defined(DEBUG)
         Serial.println("[MQTT] Sending status data:");
-        json.prettyPrintTo(Serial);
+        serializeJsonPretty(json, Serial);
         Serial.println();
 #endif
 
@@ -72,22 +61,28 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 #endif
 
     } else if (strcmp(topic, MQTT_RESTART_TOPIC) == 0) {
-        delay(2000);
-        ESP.restart();
-        delay(5000);
+        wifiManager.reboot();
     }
+}
+
+void connectToMqtt() {
+#if defined(DEBUG)
+    Serial.println("[MQTT] Connecting");
+#endif
+
+    mqtt.connect();
 }
 
 void onMqttConnect(bool sessionPresent) {
 #if defined(DEBUG)
-    Serial.print("[MQTT] Connected, rc=");
-    Serial.println(sessionPresent);
+    Serial.println("[MQTT] Connected");
 #endif
+
+    mqtt.subscribe(MQTT_RESTART_TOPIC, MQTT_QOS);
 
 #if defined(SENSOR_BMP280)
     mqtt.subscribe(MQTT_HEIGHT_UPDATE_TOPIC, MQTT_QOS);
 #endif
-    mqtt.subscribe(MQTT_RESTART_TOPIC, MQTT_QOS);
 
 #if defined(HTTP_OTA)
     mqtt.subscribe(MQTT_UPGRADE_TOPIC, MQTT_QOS);
@@ -101,21 +96,21 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
 #if defined(DEBUG)
 
         if ((int8_t)reason != 0) {
-            Serial.print("[MQTT] Not connected, rc=");
+            Serial.print("[MQTT] Disconnected, rc=");
             Serial.println((int8_t)reason);
         }
 
 #endif
 
         if (WiFi.isConnected()) {
-            mqtt.connect();
+            mqttReconnectTimer.once(2, connectToMqtt);
         }
     }
 }
 
 void mqttSetup() {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Setup OK");
+    Serial.println("[MQTT] Setup");
 #endif
 
     IPAddress ip;
@@ -135,23 +130,12 @@ void mqttSetup() {
     mqtt.onConnect(onMqttConnect);
     mqtt.onDisconnect(onMqttDisconnect);
     mqtt.onMessage(onMqttMessage);
-
-    mqtt.connect();
 }
 
 void mqttLoop() {
-    static uint32_t last_check = 0;
     static uint32_t last_status = 0;
 
     if (!ota_in_progess) {
-        if ((millis() - last_check) >= MQTT_CHECK_INTERVAL) {
-            last_check = millis();
-
-            if (!mqtt.connected()) {
-                mqtt.connect();
-            }
-        }
-
         if ((millis() - last_status) >= MQTT_STATUS_INTERVAL) {
             last_status = millis();
 

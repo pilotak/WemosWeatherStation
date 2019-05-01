@@ -1,38 +1,22 @@
-#if defined(HTTP_OTA)
-    #include <ESP8266HTTPClient.h>
-#endif
-
-#if defined(NOFUSS_OTA) || defined(HTTP_OTA)
-    #include <ESP8266httpUpdate.h>
-#endif
-
-#if defined(NOFUSS_OTA)
-    #include "NoFUSSClient.h"
-#endif
-
-#if defined(ARDUINO_OTA)
-    #include <ArduinoOTA.h>
-#endif
-
 void otaSetup() {
 #if defined(NOFUSS_OTA)
     NoFUSSClient.setServer(nofuss_server);
     NoFUSSClient.setDevice(DEVICE_NAME);
     NoFUSSClient.setVersion(FW_VERSION);
 
-
     NoFUSSClient.onMessage([](nofuss_t code) {
         if (code == NOFUSS_START) {
-#ifdef DEBUG
+#if defined(DEBUG)
             Serial.println("[NoFUSS] Starting");
 #endif
             ota_in_progess = true;
-
+#if defined(HAS_METERS)
             attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), NULL, FALLING);
             attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), NULL, FALLING);
+#endif
         }
 
-#ifdef DEBUG
+#if defined(DEBUG)
 
         if (code == NOFUSS_UPTODATE) {
             Serial.println("[NoFUSS] Nothing for me");
@@ -77,7 +61,7 @@ void otaSetup() {
 #endif
 
         if (code == NOFUSS_END) {
-#ifdef DEBUG
+#if defined(DEBUG)
             Serial.println("[NoFUSS] End");
 #endif
 
@@ -167,6 +151,8 @@ void httpUpdate() {
     char msg[127];
     uint32_t len = 0;
     ota_in_progess = true;
+    WiFiClient client;
+
     ESPhttpUpdate.rebootOnUpdate(false);
 
 #if defined(DEBUG)
@@ -174,7 +160,7 @@ void httpUpdate() {
     Serial.println(http_ota_url);
 #endif
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(http_ota_url, FW_VERSION);
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, http_ota_url, FW_VERSION);
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
@@ -204,9 +190,7 @@ void httpUpdate() {
             Serial.println("[OTA] HTTP update: OK");
 #endif
 
-            delay(2000);
-            ESP.restart();
-            delay(5000);
+            wifiManager.reboot();
             break;
     }
 }

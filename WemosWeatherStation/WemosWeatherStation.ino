@@ -19,6 +19,7 @@ SOFTWARE.
 */
 
 #include "const.h"
+#include "load.h"
 #include "wifi.h"
 #include "mqtt.h"
 #include "ota.h"
@@ -35,27 +36,36 @@ void setup() {
     Serial.println();
 #endif
 
-    wifiSetup();
-    otaSetup();
-    mqttSetup();
-    sensorsSetup();
+    if (loadDefaultConfig()) {
+        mqttSetup();
+        wifiSetup();
+        otaSetup();
+        sensorsSetup();
 
 #if defined(HAS_METERS)
-    metersSetup();
+        metersSetup();
 #endif
+
+    } else {
+        while (1) {};
+    }
 }
 
 void loop() {
     otaLoop();
 
     if (!ota_in_progess) {
+        wifiManager.process();
         buttonLoop();
-        mqttLoop();
-        sensorsLoop();
+
+        if (WiFi.isConnected()) {
+            mqttLoop();
+            sensorsLoop();
 
 #if defined(HAS_METERS)
-        metersLoop();
+            metersLoop();
 #endif
+        }
     }
 
 #if defined(HTTP_OTA)

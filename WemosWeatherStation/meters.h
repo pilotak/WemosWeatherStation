@@ -57,8 +57,7 @@ void metersLoop() {
 
     if (rain_data || meters_data) {
         if (mqtt.connected()) {
-            StaticJsonBuffer < JSON_OBJECT_SIZE(5) > jsonBuffer;
-            JsonObject& json = jsonBuffer.createObject();
+            StaticJsonDocument <JSON_OBJECT_SIZE(5)> json;
             char message[180];
 
             if (rain_data) {
@@ -67,11 +66,11 @@ void metersLoop() {
 
 #if defined(DEBUG)
                 Serial.println("[MQTT] Sending rain:");
-                json.prettyPrintTo(Serial);
+                serializeJsonPretty(json, Serial);
                 Serial.println();
 #endif
 
-                uint32_t len = json.printTo(message, sizeof(message));
+                uint32_t len = serializeJson(json, message, sizeof(message));
                 mqtt.publish(MQTT_RAIN_TOPIC, MQTT_QOS, false, message, len);
             }
 
@@ -91,11 +90,11 @@ void metersLoop() {
 
 #if defined(DEBUG)
                 Serial.println("[MQTT] Sending meters data:");
-                json.prettyPrintTo(Serial);
+                serializeJsonPretty(json, Serial);
                 Serial.println();
 #endif
 
-                uint32_t len = json.printTo(message, sizeof(message));
+                uint32_t len = serializeJson(json, message, sizeof(message));
                 mqtt.publish(MQTT_WIND_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
             }
 
