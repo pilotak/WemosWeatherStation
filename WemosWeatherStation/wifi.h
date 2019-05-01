@@ -22,12 +22,12 @@ void saveConfig() {
 
     // read updated parameters
     strncpy(mqtt_server, custom_mqtt_server.getValue(), sizeof(mqtt_server));
-    strncpy(mqtt_port, custom_mqtt_port.getValue(), sizeof(mqtt_port));
+    mqtt_port = custom_mqtt_port.getValue();
     strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
     strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
 
 #if defined(SENSOR_BMP280)
-    strncpy(height_above_sea, custom_height_above_sea.getValue(), sizeof(height_above_sea));
+    height_above_sea = custom_height_above_sea.getValue();
 #endif
 
 #if defined(NOFUSS_OTA)
@@ -140,7 +140,6 @@ bool loadDefaultConfig() {
                     Serial.println("[FS] JSON parsed");
 #endif
                     const char * server = json["mqtt_server"];
-                    const char * port = json["mqtt_port"];
                     const char * user = json["mqtt_user"];
                     const char * password = json["mqtt_password"];
 
@@ -148,11 +147,10 @@ bool loadDefaultConfig() {
                         strncpy(mqtt_server, json["mqtt_server"], sizeof(mqtt_server));
                     }
 
-                    if (port) {
-                        strncpy(mqtt_port, json["mqtt_port"], sizeof(mqtt_port));
+                    mqtt_port = json["mqtt_port"];
 
-                    } else {
-                        strncpy(mqtt_port, DEFAULT_MQTT_PORT, sizeof(mqtt_port));
+                    if (mqtt_port == 0) {
+                        mqtt_port = DEFAULT_HEIGHT_ABOVE_SEA;
                     }
 
                     if (user) {
@@ -165,13 +163,10 @@ bool loadDefaultConfig() {
 
 #if defined(SENSOR_BMP280)
 
-                    const char * above_sea = json["height_above_sea"];
+                    height_above_sea = json["height_above_sea"];
 
-                    if (above_sea) {
-                        strncpy(height_above_sea, json["height_above_sea"], sizeof(height_above_sea));
-
-                    } else {
-                        strncpy(height_above_sea, DEFAULT_HEIGHT_ABOVE_SEA, sizeof(height_above_sea));
+                    if (height_above_sea <= 0) {
+                        height_above_sea = DEFAULT_HEIGHT_ABOVE_SEA;
                     }
 
 #endif
@@ -221,7 +216,7 @@ void wifiSetup() {
 #endif
 
     custom_mqtt_server.setValue(mqtt_server, sizeof(mqtt_server));
-    custom_mqtt_port.setValue(mqtt_port, sizeof(mqtt_port));
+    custom_mqtt_port.setValue(mqtt_port, 4);
     custom_mqtt_user.setValue(mqtt_user, sizeof(mqtt_user));
     custom_mqtt_password.setValue(mqtt_password, sizeof(mqtt_password));
 
@@ -231,7 +226,7 @@ void wifiSetup() {
     wifiManager.addParameter(&custom_mqtt_password);
 
 #if defined(SENSOR_BMP280)
-    custom_height_above_sea.setValue(height_above_sea, sizeof(height_above_sea));
+    custom_height_above_sea.setValue(height_above_sea, 4);
     wifiManager.addParameter(&custom_height_above_sea);
 #endif
 

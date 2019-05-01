@@ -11,6 +11,54 @@ WiFiManager wifiManager;
 WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
 
+class IntParameter : public WiFiManagerParameter {
+  public:
+    IntParameter(const char *id, const char *placeholder, int32_t value, const uint8_t length = 10, const char *custom = NULL)
+        : WiFiManagerParameter("") {
+        const char * type_number = "type=\"number\" ";
+        uint16_t custom_len = 0;
+
+        if (custom) {
+            custom_len = strlen(custom);
+        }
+
+        uint16_t custom_buffer_len = custom_len + strlen(type_number) + 1;
+
+        custom_buffer = new char[custom_buffer_len];
+
+        if (custom_buffer) {
+            int offset = snprintf(custom_buffer, custom_buffer_len, type_number);
+
+            if (custom_len > 0 && offset > 0) {
+                snprintf(custom_buffer + offset, custom_buffer_len - offset, custom);
+            }
+
+            init(id, placeholder, String(value).c_str(), length, custom_buffer, WFM_LABEL_BEFORE);
+        }
+    }
+
+    ~IntParameter() {
+        if (custom_buffer) {
+            delete[] custom_buffer;
+        }
+    }
+
+    int32_t getValue() {
+        return String(WiFiManagerParameter::getValue()).toInt();
+    }
+
+    void setValue(int32_t value, uint8_t max_size) {
+        char *buffer = new char[max_size];
+
+        if (buffer) {
+            itoa(value, buffer, 10);
+            WiFiManagerParameter::setValue(buffer, max_size);
+            delete[] buffer;
+        }
+    }
+
+    char *custom_buffer;
+};
 
 // mqtt.h
 #include <ESP8266WiFi.h>
@@ -21,7 +69,7 @@ AsyncMqttClient mqtt;
 Ticker mqttReconnectTimer;
 
 char mqtt_server[40];
-char mqtt_port[6] = DEFAULT_MQTT_PORT;
+uint16_t mqtt_port = DEFAULT_MQTT_PORT;
 char mqtt_user[16] = {0};
 char mqtt_password[32] = {0};
 char will[40];
@@ -29,7 +77,7 @@ char will[40];
 void connectToMqtt();
 
 WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT server", mqtt_server, sizeof(mqtt_server), "required");
-WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT port", mqtt_port, sizeof(mqtt_port), "required");
+IntParameter custom_mqtt_port("mqtt_port", "MQTT port", mqtt_port, 4, "required");
 WiFiManagerParameter custom_mqtt_user("mqtt_user", "MQTT user", mqtt_user, sizeof(mqtt_user),
                                       "placeholder=\"Leave blank if not aplicable\"");
 WiFiManagerParameter custom_mqtt_password("mqtt_password", "MQTT password", mqtt_password, sizeof(mqtt_password),
@@ -67,9 +115,9 @@ MeteoFunctions meteoFunctions;
 MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
 
 #if defined(SENSOR_BMP280)
-    char height_above_sea[8] = DEFAULT_HEIGHT_ABOVE_SEA;
-    WiFiManagerParameter custom_height_above_sea("height_above_sea", "Height above sea (m)", height_above_sea, sizeof(height_above_sea),
-    "required");
+    uint16_t height_above_sea = DEFAULT_HEIGHT_ABOVE_SEA;
+
+    IntParameter custom_height_above_sea("height_above_sea", "Height above sea (m)", height_above_sea, 4, "required");
 #endif
 
 

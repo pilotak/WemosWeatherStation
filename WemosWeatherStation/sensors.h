@@ -129,10 +129,8 @@ void sensorsLoop() {
         if (sensor_state & 0b1) {
             abs_pressure = bmp.pres(BME280::PresUnit_Pa);
 
-            float above_sea = atoi(height_above_sea);
-
-            if (above_sea <= 500) {  // relative pressure in only counted up to 500 m above sea
-                rel_pressure = filter[3].add(meteoFunctions.relativePressure_c(abs_pressure, above_sea, temp_bmp));
+            if (height_above_sea <= 500) {  // relative pressure in only counted up to 500 m above sea
+                rel_pressure = filter[3].add(meteoFunctions.relativePressure_c(abs_pressure, height_above_sea, temp_bmp));
 
             } else {
                 rel_pressure = NAN;

@@ -37,7 +37,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 #if defined(SENSOR_BMP280)
 
         if (atoi(payload) > 0) {
-            memcpy(height_above_sea, payload, len);
+            height_above_sea = atoi(payload);
             saveConfig();
 
             // confirm
@@ -119,10 +119,10 @@ void mqttSetup() {
     IPAddress ip;
 
     if (ip.fromString(mqtt_server)) {  // check if server is IP address or hostname
-        mqtt.setServer(ip, atoi(mqtt_port));
+        mqtt.setServer(ip, mqtt_port);
 
     } else {
-        mqtt.setServer(mqtt_server, atoi(mqtt_port));
+        mqtt.setServer(mqtt_server, mqtt_port);
     }
 
     snprintf(will, sizeof(will), "{\"status\": %i}", MQTT_STATUS_DEAD);

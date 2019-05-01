@@ -6,7 +6,7 @@
 #define CONFIG_AP_PASSWORD "StrongPasswordHere"
 #define CONFIG_PORTAL_TIMEOUT 120  // sec
 
-#define DEFAULT_MQTT_PORT "1883"  // important to be a string; can be changed in WifiManager
+#define DEFAULT_MQTT_PORT 1883
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
 #define MQTT_CHECK_INTERVAL 5000
@@ -24,13 +24,13 @@
 #define MQTT_STATUS_DEAD 0
 
 #define BUTTON_PIN D3
-#define LONG_PRESS 1500  // ms
+#define LONG_PRESS 1000  // ms
 
 #define READ_INTERVAL 3750  // ms
 #define READ_SAMPLES 16  // READ_INTERVAL*SAMPLES=sending time of sensors in ms
 #define METERS_INTERVAL 60  // how ofter send data from meters in sec
 #define METERS_DIR_FILTERING 16  // filter last 16 samples of wind vane
-#define DEFAULT_HEIGHT_ABOVE_SEA "415"  // m; important to be a string; can be changed in WifiManager or via MQTT
+#define DEFAULT_HEIGHT_ABOVE_SEA 415  // m
 
 #define I2C_SPEED 100000
 #define BMP280_ADDR BME280I2C::I2CAddr_0x76  // or BME280I2C::I2CAddr_0x77
