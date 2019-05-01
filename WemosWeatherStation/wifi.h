@@ -76,12 +76,7 @@ void startConfigPortal() {
 #endif
     wifiManager.stopWebPortal();
     wifiManager.setConfigPortalBlocking(true);
-
-    if (!wifiManager.startConfigPortal(CONFIG_AP_SSID, CONFIG_AP_PASSWORD)) {
-#if defined(DEBUG)
-        Serial.println("[WIFI] Failed create config AP");
-#endif
-    }
+    wifiManager.startConfigPortal(CONFIG_AP_SSID, CONFIG_AP_PASSWORD);
 
 #if defined(DEBUG)
     Serial.println("[WIFI] Ending configuration portal");
@@ -144,19 +139,52 @@ bool loadDefaultConfig() {
 #if defined(DEBUG)
                     Serial.println("[FS] JSON parsed");
 #endif
+                    const char * server = json["mqtt_server"];
+                    const char * port = json["mqtt_port"];
+                    const char * user = json["mqtt_user"];
+                    const char * password = json["mqtt_password"];
 
-                    strncpy(mqtt_server, json["mqtt_server"], sizeof(mqtt_server));
-                    strncpy(mqtt_port, json["mqtt_port"], sizeof(mqtt_port));
-                    strncpy(mqtt_user, json["mqtt_user"], sizeof(mqtt_user));
-                    strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
+                    if (server) {
+                        strncpy(mqtt_server, json["mqtt_server"], sizeof(mqtt_server));
+                    }
+
+                    if (port) {
+                        strncpy(mqtt_port, json["mqtt_port"], sizeof(mqtt_port));
+
+                    } else {
+                        strncpy(mqtt_port, DEFAULT_MQTT_PORT, sizeof(mqtt_port));
+                    }
+
+                    if (user) {
+                        strncpy(mqtt_user, json["mqtt_user"], sizeof(mqtt_user));
+                    }
+
+                    if (password) {
+                        strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
+                    }
 
 #if defined(SENSOR_BMP280)
-                    strncpy(height_above_sea, json["height_above_sea"], sizeof(height_above_sea));
+
+                    const char * above_sea = json["height_above_sea"];
+
+                    if (above_sea) {
+                        strncpy(height_above_sea, json["height_above_sea"], sizeof(height_above_sea));
+
+                    } else {
+                        strncpy(height_above_sea, DEFAULT_HEIGHT_ABOVE_SEA, sizeof(height_above_sea));
+                    }
+
 #endif
 
 #if defined(NOFUSS_OTA)
-                    strncpy(nofuss_server, json["nofuss_server"], sizeof(nofuss_server));
+                    const char * nofuss = json["nofuss_server"];
+
+                    if (nofuss) {
+                        strncpy(nofuss_server, json["nofuss_server"], sizeof(nofuss_server));
+                    }
+
 #endif
+
                     return true;
                 }
             }
@@ -181,6 +209,10 @@ void wifiSetup() {
     wifiManager.setConfigPortalBlocking(false);
     wifiManager.setEnableConfigPortal(false);
     wifiManager.setSaveParamsCallback(saveConfig);
+    wifiManager.setBreakAfterConfig(true);
+
+    std::vector<const char *> menu = {"wifi", "param", "restart", "exit"};
+    wifiManager.setMenu(menu);
 
 #if defined(DEBUG)
     wifiManager.setDebugOutput(true);

@@ -67,7 +67,10 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
 void connectToMqtt() {
 #if defined(DEBUG)
-    Serial.println("[MQTT] Connecting");
+    Serial.print("[MQTT] Connecting to: ");
+    Serial.print(mqtt_server);
+    Serial.print(":");
+    Serial.println(mqtt_port);
 #endif
 
     mqtt.connect();

@@ -28,17 +28,19 @@ char will[40];
 
 void connectToMqtt();
 
-WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT server");
-WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT port");
-WiFiManagerParameter custom_mqtt_user("mqtt_user", "MQTT user");
-WiFiManagerParameter custom_mqtt_password("mqtt_password", "MQTT password");
+WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT server", mqtt_server, sizeof(mqtt_server), "required");
+WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT port", mqtt_port, sizeof(mqtt_port), "required");
+WiFiManagerParameter custom_mqtt_user("mqtt_user", "MQTT user", mqtt_user, sizeof(mqtt_user),
+                                      "placeholder=\"Leave blank if not aplicable\"");
+WiFiManagerParameter custom_mqtt_password("mqtt_password", "MQTT password", mqtt_password, sizeof(mqtt_password),
+        "placeholder=\"Leave blank if not aplicable\" type=\"password\"");
 
 
 // ota.h
 #if defined(NOFUSS_OTA)
     #include "NoFUSSClient.h"
     char nofuss_server[40];
-    WiFiManagerParameter custom_nofuss_server("nofuss_server", "NoFUSS server");
+    WiFiManagerParameter custom_nofuss_server("nofuss_server", "NoFUSS server", nofuss_server, sizeof(nofuss_server), "required");
 #endif
 
 #if defined(HTTP_OTA)
@@ -66,7 +68,8 @@ MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, r
 
 #if defined(SENSOR_BMP280)
     char height_above_sea[8] = DEFAULT_HEIGHT_ABOVE_SEA;
-    WiFiManagerParameter custom_height_above_sea("height_above_sea", "Height above sea (m)");
+    WiFiManagerParameter custom_height_above_sea("height_above_sea", "Height above sea (m)", height_above_sea, sizeof(height_above_sea),
+    "required");
 #endif
 
 
