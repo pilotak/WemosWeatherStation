@@ -321,25 +321,14 @@ void sensorsLoop() {
             if (sensor_state > 0) {
                 JsonArray temperatures = json.createNestedArray("temp");
 #if defined(SENSOR_MCP9808)
-
-                if (!isnan(temp_mcp)) {
-                    temperatures.add(round2(temp_mcp));
-                }
-
+                temperatures.add(round2(temp_mcp));
 #endif
 #if defined(SENSOR_BMP280)
-
-                if (!isnan(temp_bmp)) {
-                    temperatures.add(round2(temp_bmp));
-                }
-
+                temperatures.add(round2(temp_bmp));
 #endif
+
 #if defined(SENSOR_HTU21D)
-
-                if (!isnan(temp_htu)) {
-                    temperatures.add(round2(temp_htu));
-                }
-
+                temperatures.add(round2(temp_htu));
 #endif
             }
 
