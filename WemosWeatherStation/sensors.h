@@ -22,6 +22,9 @@ BME280I2C bmp(settings);
 #if defined(SENSOR_HTU21D)
     #include <HTU21D.h>
     HTU21D htu(HTU21D_RES_RH12_TEMP14);
+#elif defined(SENSOR_SHT31)
+    #include "ClosedCube_SHT31D.h"
+    ClosedCube_SHT31D sht31;
 #endif
 
 float round2(float value) {
@@ -36,7 +39,7 @@ void sensorsSetup() {
 
     if (mcp.begin(MCP9808_ADDR, &Wire)) {
         sensor_state |= (1 << 1);
-        mcp.setResolution(2);
+        mcp.setResolution(3);
         mcp.shutdown_wake(0);
 
     } else {
@@ -78,6 +81,19 @@ void sensorsSetup() {
 
 #if defined(DEBUG)
         Serial.println("[SENSOR] HTU21D did not respond. Please check wiring.");
+#endif
+    }
+
+#elif defined(SENSOR_SHT31)
+
+    if (sht31.begin(0x44) != SHT3XD_NO_ERROR) {
+        sensor_state |= (1 << 2);
+
+    } else {
+        sensor_state &= ~(1 << 2);
+
+#if defined(DEBUG)
+        Serial.println("[SENSOR] SHT31D did not respond. Please check wiring.");
 #endif
     }
 

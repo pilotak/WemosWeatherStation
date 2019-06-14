@@ -114,12 +114,23 @@ bool ota_in_progess = false;
 MeteoFunctions meteoFunctions;
 MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
 
-#if defined(SENSOR_BMP280)
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+    MovingAverageFloat <READ_SAMPLES> baro_filter[2];  // rel pressure, abs pressure
+    MovingAverageFloat <READ_SAMPLES> baro_temp_filter;
+
     uint16_t height_above_sea = DEFAULT_HEIGHT_ABOVE_SEA;
 
     IntParameter custom_height_above_sea("height_above_sea", "Height above sea (m)", height_above_sea, 4, "required");
 #endif
 
+#if defined(SENSOR_BME280) || defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+    MovingAverageFloat <READ_SAMPLES> humidity_filter[2];  // rel humidity, abs humidity
+    MovingAverageFloat <READ_SAMPLES> humidity_temp_filter;
+#endif
+
+#if defined(SENSOR_MCP9808)
+    MovingAverageFloat <READ_SAMPLES> temp_filter;
+#endif
 
 // button.h
 #include <JC_Button.h>
