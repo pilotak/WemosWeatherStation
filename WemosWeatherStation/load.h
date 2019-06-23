@@ -112,7 +112,6 @@ bool ota_in_progess = false;
 #include "MovingAverageFloat.h"
 
 MeteoFunctions meteoFunctions;
-MovingAverageFloat <READ_SAMPLES> filter[6];  // BMP temp, MCP temp, HTU temp, rel pressure, abs pressure, humidity
 
 #if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
     MovingAverageFloat <READ_SAMPLES> baro_filter[2];  // rel pressure, abs pressure
