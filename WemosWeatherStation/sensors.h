@@ -377,7 +377,7 @@ void sensorsLoop() {
         counter = 0;
 
         if (mqtt.connected()) {
-            StaticJsonDocument < (JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(3)) > json;
+            StaticJsonDocument < (JSON_OBJECT_SIZE(9) + JSON_ARRAY_SIZE(3)) > json;
 
 #if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
 

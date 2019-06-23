@@ -1,12 +1,13 @@
 void sendStatus() {
     if (mqtt.connected()) {
-        StaticJsonDocument < JSON_OBJECT_SIZE(5) > json;
-        char message[144];
+        StaticJsonDocument < JSON_OBJECT_SIZE(6) > json;
+        char message[140];
 
         json["status"] = MQTT_STATUS_ALIVE;
         json["ip"] = WiFi.localIP().toString();
         json["signal"] = wifiManager.getRSSIasQuality(WiFi.RSSI());
         json["sensors"] = sensor_state;
+        json["fw_ver"] = FW_VERSION;
 
         uint32_t len = serializeJson(json, message, sizeof(message));
 
