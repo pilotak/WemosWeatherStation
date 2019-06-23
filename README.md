@@ -29,7 +29,8 @@ If online:
   "status": 1,
   "ip": "192.168.1.7",
   "rssi": -10,
-  "sensors": 7
+  "sensors": 7,
+  "fw_ver": "1.0.0"
 }
 ```
 
@@ -44,15 +45,16 @@ otherwise:
 If any of the value can't be calculated, it sends `NaN`
 ```json
 {
-  "humidity": 79.84,
+  "humidity_rel": 79.84,
+  "humidity_abs": 14.93,
   "pressure_rel": 1021.85,
-  "pressure_abs": 967,
-  "dew": 2.1,
+  "pressure_abs": 967.55,
+  "dew": 2.13,
   "humidex": 3.69,
   "heat": 3.97,
   "cloud": 390.13,
   "temp": [
-    5.3,
+    5.32,
     5.36,
     5.43
   ]
