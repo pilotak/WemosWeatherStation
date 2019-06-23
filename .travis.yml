@@ -13,6 +13,8 @@ install:
 
 script:
   - platformio run -e WemosWeatherStation
+  - platformio run -e WemosWeatherStation_no_meters
+  - platformio run -e WemosWeatherStation_v2
 
 notifications:
   email:

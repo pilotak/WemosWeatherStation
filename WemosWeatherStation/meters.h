@@ -10,11 +10,11 @@ volatile bool meters_data = false;
 volatile bool rain_data = false;
 volatile bool read_adc = false;
 
-void intAnemometer() {
+void ICACHE_RAM_ATTR intAnemometer() {
     meters.intAnemometer();
 }
 
-void intRaingauge() {
+void ICACHE_RAM_ATTR intRaingauge() {
     meters.intRaingauge();
 }
 
@@ -51,7 +51,16 @@ void metersSetup() {
 
 void metersLoop() {
     if (read_adc) {
-        meters.adcToDir(mcp3021.read());
+        uint16_t adc;
+        adc = mcp3021.read();
+
+        if (adc != 0xFFFF) {
+            meters.adcToDir(adc);
+
+        } else {
+            meters.reset();
+        }
+
         read_adc = false;
     }
 
@@ -83,9 +92,36 @@ void metersLoop() {
                 json["wind_speed"] = round2(wind_speed_kmh);
                 json["beaufort"] = meteoFunctions.beaufort(wind_speed_ms);
 
-                if ((sensor_state & 0b010) && (sensor_state & 0b100)) {
-                    json["wind_chill"] = round2(meteoFunctions.windChill_c(filter[1].get(), wind_speed_ms));
-                    json["apparent"] = round2(meteoFunctions.apparentTemp_c(filter[1].get(), filter[2].get(), wind_speed_ms));
+                float temp = NAN;
+                float humidity = NAN;
+
+#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+
+                if (sensor_state & 0b100) {
+                    temp = humidity_temp_filter.get();
+                    humidity = humidity_filter[0].get();
+                }
+
+#elif defined(SENSOR_MCP9808)
+
+                if (sensor_state & 0b010) {
+                    temp = temp_filter.get();
+                }
+
+#elif defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+
+                if (sensor_state & 0b001) {
+                    temp = baro_temp_filter.get();
+                }
+
+#endif
+
+                if (!isnan(temp)) {
+                    json["wind_chill"] = round2(meteoFunctions.windChill_c(temp, wind_speed_ms));
+
+                    if (!isnan(humidity)) {
+                        json["apparent"] = round2(meteoFunctions.apparentTemp_c(temp, humidity, wind_speed_ms));
+                    }
                 }
 
 #if defined(DEBUG)
