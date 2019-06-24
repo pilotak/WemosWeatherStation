@@ -150,7 +150,7 @@ bool loadDefaultConfig() {
                     mqtt_port = json["mqtt_port"];
 
                     if (mqtt_port == 0) {
-                        mqtt_port = DEFAULT_HEIGHT_ABOVE_SEA;
+                        mqtt_port = DEFAULT_MQTT_PORT;
                     }
 
                     if (user) {

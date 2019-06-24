@@ -267,7 +267,10 @@ void sensorsLoop() {
     float abs_pressure = NAN;
     float rel_pressure = NAN;
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280)
+#if defined(SENSOR_BMP280)
+    float none = NAN;
+    bmp.read(abs_pressure, temp_baro, none);
+#elif defined(SENSOR_BME280)
     bmp.read(abs_pressure, temp_baro, rel_humidity);
 #elif defined(SENSOR_LPS35HW)
     abs_pressure = lps.readPressure();
