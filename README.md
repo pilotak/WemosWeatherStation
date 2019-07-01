@@ -10,10 +10,12 @@ Data are sent over MQTT where [Telegraf](https://www.influxdata.com/time-series-
 - WeMos based shield
 - WH1080 mechanical components for rain, wind measurements and radiation shield
 - MCP9808: high precision temperature sensor
-- HTU21D: humidity sensor
-- BMP280: pressure sensor
+- HTU21D or SHT31D: humidity sensor
+- BMP280 or LPS35HW: pressure sensor
 - Output data is via MQTT
-- supports HTTP OTA
+- supports Arduino OTA, HTTP OTA and [NoFuss OTA](https://github.com/xoseperez/espurna)
+
+*Note: on the board there can be only one humidity sensor, one pressure sensor and one temperature sensor in any combination, please see `platformio.ini`*
 
 ## Wemos-meteo shield
 Based on my libraries:
@@ -62,7 +64,7 @@ If any of the value can't be calculated, it sends `NaN`
 ```
 
 #### `name/upgrade`
-As a data send link to `*.bin` upgrade package and it will reply in topic `name/upgrade/status`
+As a data send link to `*.bin` upgrade package and it will reply in topic `name/upgrade/status` (HTTP support only) *ie.: http://somewebsite.com/package.bin*
 
 #### `name/height`
 As a data send new height and it will confirm in topic `name/height/new`
@@ -78,12 +80,18 @@ As a data send new height and it will confirm in topic `name/height/new`
 
 ## Weather board
 Fits directly into radiation shield, just connect wind sensors, rain gauge bucket and you ready to measure. For future i have included extention connector for measuring sun light and UV index.
+**_Update, I have created a sencond version of WeatherBoard with water-proof sensors SHT31D and LPS35HW but be carefull they are difficult to solder due to its size._**
 
 <table border="0">
  <tr>
     <td><img alt="WeatherBoard 1"src="./Images/WeatherBoard_1.jpg"/></td>
     <td><img alt="WeatherBoard 2"src="./Images/WeatherBoard_2.jpg"/></td>
     <td><img alt="WeatherBoard 3"src="./Images/WeatherBoard_3.jpg"/></td>
+ </tr>
+ <tr>
+    <td></td>
+    <td><img alt="WeatherBoard V2"src="./Images/WeatherBoard_v2.jpg"/></td>
+    <td></td>
  </tr>
 </table>
 
