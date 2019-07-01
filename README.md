@@ -64,7 +64,8 @@ If any of the value can't be calculated, it sends `NaN`
 ```
 
 #### `name/upgrade`
-As a data send link to `*.bin` upgrade package and it will reply in topic `name/upgrade/status` (HTTP support only) *ie.: http://somewebsite.com/package.bin*
+As a data send link to `*.bin` upgrade package and it will reply in topic `name/upgrade/status`
+(HTTP support only) *ie.: `http://somewebsite.com/upload/package.bin`*
 
 #### `name/height`
 As a data send new height and it will confirm in topic `name/height/new`
@@ -80,6 +81,7 @@ As a data send new height and it will confirm in topic `name/height/new`
 
 ## Weather board
 Fits directly into radiation shield, just connect wind sensors, rain gauge bucket and you ready to measure. For future i have included extention connector for measuring sun light and UV index.
+
 **_Update, I have created a sencond version of WeatherBoard with water-proof sensors SHT31D and LPS35HW but be carefull they are difficult to solder due to its size._**
 
 <table border="0">
