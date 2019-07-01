@@ -26,7 +26,7 @@ void saveConfig() {
     strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
     strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
 
-#if defined(SENSOR_BMP280)
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
     height_above_sea = custom_height_above_sea.getValue();
 #endif
 
@@ -40,7 +40,7 @@ void saveConfig() {
     json["mqtt_user"] = mqtt_user;
     json["mqtt_password"] = mqtt_password;
 
-#if defined(SENSOR_BMP280)
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
     json["height_above_sea"] = height_above_sea;
 #endif
 
@@ -161,7 +161,7 @@ bool loadDefaultConfig() {
                         strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
                     }
 
-#if defined(SENSOR_BMP280)
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
 
                     height_above_sea = json["height_above_sea"];
 
@@ -225,7 +225,7 @@ void wifiSetup() {
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_password);
 
-#if defined(SENSOR_BMP280)
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
     custom_height_above_sea.setValue(height_above_sea, 4);
     wifiManager.addParameter(&custom_height_above_sea);
 #endif
