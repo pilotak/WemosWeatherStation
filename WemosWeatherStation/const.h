@@ -44,4 +44,4 @@
 #define NOFUSS_CHECK_INTERVAL 3600000  // 1h
 #define OTA_PORT 8266  // for local updates
 
-uint8_t sensor_state = 0b000;  // BMP, MCP, HTU
+uint8_t sensor_state = 0b000;  // 0b(Humidity)(Temperature)(Barometer)

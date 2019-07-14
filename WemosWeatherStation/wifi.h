@@ -104,12 +104,15 @@ bool loadDefaultConfig() {
         Serial.println("[FS] mounted");
 #endif
 
+        DynamicJsonDocument json(JSON_OBJECT_SIZE(5) + 130);
+        File configFile;
+
         if (SPIFFS.exists(CONFIG_PATH)) {
 #if defined(DEBUG)
             Serial.println("[FS] Reading config file...");
 #endif
 
-            File configFile = SPIFFS.open(CONFIG_PATH, "r");
+            configFile = SPIFFS.open(CONFIG_PATH, "r");
 
             if (configFile) {
 #if defined(DEBUG)
@@ -121,7 +124,6 @@ bool loadDefaultConfig() {
                 std::unique_ptr<char[]> buf(new char[size]);
 
                 configFile.readBytes(buf.get(), size);
-                DynamicJsonDocument json(1024);
                 DeserializationError error = deserializeJson(json, buf.get());
 
 
@@ -129,6 +131,7 @@ bool loadDefaultConfig() {
                 serializeJsonPretty(json, Serial);
                 Serial.println();
 #endif
+                configFile.close();
 
                 if (error) {
 #if defined(DEBUG)
@@ -183,6 +186,45 @@ bool loadDefaultConfig() {
                     return true;
                 }
             }
+
+        } else {
+#if defined(DEBUG)
+            Serial.println("[FS] Formatting");
+#endif
+            SPIFFS.format();
+            configFile = SPIFFS.open(CONFIG_PATH, "w");
+
+            if (!configFile) {
+                Serial.println("Failed to create file");
+                return false;
+            }
+
+            json["mqtt_server"] = "192.168.1.100";
+            json["mqtt_port"] = DEFAULT_MQTT_PORT;
+            json["mqtt_user"] = "";
+            json["mqtt_password"] = "";
+
+#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+
+            json["height_above_sea"] = DEFAULT_HEIGHT_ABOVE_SEA;
+#endif
+
+#if defined(NOFUSS_OTA)
+            json["nofuss_server"] = "";
+#endif
+
+            if (serializeJson(json, configFile) == 0) {
+#if defined(DEBUG)
+                Serial.println("Failed to write to file");
+#endif
+
+            } else {
+#if defined(DEBUG)
+                Serial.println("Saved");
+#endif
+            }
+
+            configFile.close();
         }
 
     } else {

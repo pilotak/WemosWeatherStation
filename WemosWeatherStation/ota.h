@@ -190,6 +190,7 @@ void httpUpdate() {
             Serial.println("[OTA] HTTP update: OK");
 #endif
 
+            delay(1000);
             wifiManager.reboot();
             break;
     }

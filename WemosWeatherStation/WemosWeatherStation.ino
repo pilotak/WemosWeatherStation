@@ -37,6 +37,7 @@ void setup() {
 #endif
 
     if (loadDefaultConfig()) {
+        buttonSetup();
         mqttSetup();
         wifiSetup();
         otaSetup();
