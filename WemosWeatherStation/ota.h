@@ -154,6 +154,7 @@ void httpUpdate() {
     WiFiClient client;
 
     ESPhttpUpdate.rebootOnUpdate(false);
+    ESPhttpUpdate.followRedirects(true);
 
 #if defined(DEBUG)
     Serial.print("[OTA] Starting HTTP update from: ");
