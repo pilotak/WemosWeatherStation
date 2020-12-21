@@ -1,5 +1,6 @@
-# WeMos weather station
-[![Build Status](https://travis-ci.org/pilotak/WemosWeatherStation.svg?branch=master)](https://travis-ci.org/pilotak/WemosWeatherStation)
+# Wemos weather station
+[![build](https://github.com/pilotak/WemosWeatherStation/workflows/build/badge.svg)](https://github.com/pilotak/WemosWeatherStation/actions) 
+[![Framework Badge Arduino](https://img.shields.io/badge/framework-arduino-00979C.svg)](https://arduino.cc)
 
 An all-in-one ESP8266 based weather station. Hardware configuration is split into two parts due to easier maintenance in case of ESP8266 failure and fuse replacement (the board outside is protected against lighting). FW can easily be compiled by PlatformIO or Arduino IDE if necessary, otherwise can be downloaded in **Releases**.
 

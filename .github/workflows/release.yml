@@ -1,0 +1,55 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prepare
+        run: |
+          git fetch --prune --unshallow --tags -f
+
+          CURRENT_TAG=$(git tag --points-at HEAD)
+          echo ::set-output name=version::${CURRENT_TAG//v}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Build
+        if: success()
+        run: |
+          pio run -e WemosWeatherStation_v2 -e WemosWeatherStation_v2_upgrade
+
+      - name: Create release
+        if: ${{ success() && steps.prepare.outputs.version != null }}
+        run: |
+          set -x
+          assets=()
+
+          for path in ./.pio/build/*/; do
+            name="$(basename "${path}")"
+            mv "./.pio/build/$name/firmware.bin" "$name.bin"
+            assets+=("-a" "$name.bin")
+          done
+
+          echo "FW ${{ steps.prepare.outputs.version }}" >"CHANGELOG.md"
+          echo "" >>"CHANGELOG.md"
+          echo "## :bookmark_tabs: Changes" >>"CHANGELOG.md"
+          git log --pretty=format:"- %s %H%n" $(git describe --abbrev=0 --tags $(git describe --tags --abbrev=0)^)...$(git describe --tags --abbrev=0) >>"CHANGELOG.md"
+
+          hub release create "${assets[@]}" "--file" "CHANGELOG.md" "$(git tag --points-at HEAD)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
