@@ -35,7 +35,7 @@ jobs:
       - name: Build
         if: success()
         run: |
-          pio run -e WemosWeatherStation_v2 -e WemosWeatherStation_v2_upgrade
+          pio run -e WemosWeatherStation_v2 -e WemosWeatherStation_v2_upgrade -e WemosWeatherStation_v2_bmp280
 
       - name: Create release
         if: ${{ success() && steps.prepare.outputs.version != null }}
