@@ -35,7 +35,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 #endif
 
     if (strcmp(topic, MQTT_HEIGHT_UPDATE_TOPIC) == 0 && len > 0) {
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
 
         if (atoi(payload) > 0) {
             height_above_sea = atoi(payload);

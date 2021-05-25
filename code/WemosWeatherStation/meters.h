@@ -95,20 +95,20 @@ void metersLoop() {
                 float temp = NAN;
                 float humidity = NAN;
 
-#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+#if defined(HAS_HUMIDITY)
 
                 if (sensor_state & 0b100) {
                     temp = humidity_temp_filter.get();
                     humidity = humidity_filter[0].get();
                 }
 
-#elif defined(SENSOR_MCP9808)
+#elif defined(HAS_TEMP)
 
                 if (sensor_state & 0b010) {
                     temp = temp_filter.get();
                 }
 
-#elif defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#elif defined(HAS_BARO)
 
                 if (sensor_state & 0b001) {
                     temp = baro_temp_filter.get();

@@ -26,7 +26,7 @@ void saveConfig() {
     strncpy(mqtt_user, custom_mqtt_user.getValue(), sizeof(mqtt_user));
     strncpy(mqtt_password, custom_mqtt_password.getValue(), sizeof(mqtt_password));
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
     height_above_sea = custom_height_above_sea.getValue();
 #endif
 
@@ -40,7 +40,7 @@ void saveConfig() {
     json["mqtt_user"] = mqtt_user;
     json["mqtt_password"] = mqtt_password;
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
     json["height_above_sea"] = height_above_sea;
 #endif
 
@@ -48,7 +48,7 @@ void saveConfig() {
     json["nofuss_server"] = nofuss_server;
 #endif
 
-    File configFile = SPIFFS.open(CONFIG_PATH, "w");
+    File configFile = LittleFS.open(CONFIG_PATH, "w");
 
     if (!configFile) {
 #if defined(DEBUG)
@@ -99,7 +99,7 @@ bool loadDefaultConfig() {
     Serial.println("[FS] mounting...");
 #endif
 
-    if (SPIFFS.begin()) {
+    if (LittleFS.begin()) {
 #if defined(DEBUG)
         Serial.println("[FS] mounted");
 #endif
@@ -107,12 +107,12 @@ bool loadDefaultConfig() {
         DynamicJsonDocument json(JSON_OBJECT_SIZE(5) + 130);
         File configFile;
 
-        if (SPIFFS.exists(CONFIG_PATH)) {
+        if (LittleFS.exists(CONFIG_PATH)) {
 #if defined(DEBUG)
             Serial.println("[FS] Reading config file...");
 #endif
 
-            configFile = SPIFFS.open(CONFIG_PATH, "r");
+            configFile = LittleFS.open(CONFIG_PATH, "r");
 
             if (configFile) {
 #if defined(DEBUG)
@@ -164,7 +164,7 @@ bool loadDefaultConfig() {
                         strncpy(mqtt_password, json["mqtt_password"], sizeof(mqtt_password));
                     }
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
 
                     height_above_sea = json["height_above_sea"];
 
@@ -191,8 +191,8 @@ bool loadDefaultConfig() {
 #if defined(DEBUG)
             Serial.println("[FS] Formatting");
 #endif
-            SPIFFS.format();
-            configFile = SPIFFS.open(CONFIG_PATH, "w");
+            LittleFS.format();
+            configFile = LittleFS.open(CONFIG_PATH, "w");
 
             if (!configFile) {
                 Serial.println("Failed to create file");
@@ -204,7 +204,7 @@ bool loadDefaultConfig() {
             json["mqtt_user"] = "";
             json["mqtt_password"] = "";
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
 
             json["height_above_sea"] = DEFAULT_HEIGHT_ABOVE_SEA;
 #endif
@@ -267,7 +267,7 @@ void wifiSetup() {
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_password);
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
     custom_height_above_sea.setValue(height_above_sea, 4);
     wifiManager.addParameter(&custom_height_above_sea);
 #endif

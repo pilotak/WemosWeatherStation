@@ -1,142 +1,33 @@
 #if defined(SENSOR_MCP9808)
-    #include "Adafruit_MCP9808.h"
-    Adafruit_MCP9808 mcp;
+    #include "sensors/mcp9808.h"
 #endif
 
 #if defined(SENSOR_BMP280) || defined(SENSOR_BME280)
-#include "BME280I2C.h"
-BME280I2C::Settings settings(
-    BME280::OSR_X1,
-    BME280::OSR_X1,
-    BME280::OSR_X1,
-    BME280::Mode_Forced,
-    BME280::StandbyTime_1000ms,
-    BME280::Filter_8,
-    BME280::SpiEnable_False,
-    BMP280_ADDR
-);
-
-BME280I2C bmp(settings);
+    #include "sensors/bmp280.h"
 #elif defined(SENSOR_LPS35HW)
-#include "LPS35HW.h"
-LPS35HW lps;
+    #include "sensors/lps35hw.h"
 #endif
 
 #if defined(SENSOR_HTU21D)
-    #include "HTU21D.h"
-    HTU21D htu(HTU21D_RES_RH12_TEMP14);
+    #include "sensors/htu21d.h"
 #elif defined(SENSOR_SHT31)
-    #include "ClosedCube_SHT31D.h"
-    ClosedCube_SHT31D sht31;
+    #include "sensors/sht31d.h"
 #endif
-
-float round2(float value) {
-    return round(value * 100.0) / 100.0;
-}
-
-bool setupBaro() {
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280)
-    return bmp.begin();
-#elif defined(SENSOR_LPS35HW)
-
-    if (lps.begin(&Wire)) {
-        lps.setLowPassFilter(LPS35HW::LowPassFilter_ODR9);
-        return true;
-    }
-
-#endif
-    return false;
-}
-
-bool setupMCP9808() {
-#if defined(SENSOR_MCP9808)
-
-    if (mcp.begin(MCP9808_ADDR, &Wire)) {
-        sensor_state |= (1 << 1);
-        mcp.setResolution(3);
-        mcp.shutdown_wake(0);
-        return true;
-    }
-
-#endif
-    return false;
-}
-
-bool setupHumidity() {
-#if defined(SENSOR_HTU21D)
-
-    if (htu.begin(SDA, SCL)) {
-        return true;
-    }
-
-#elif defined(SENSOR_SHT31)
-
-    if (sht31.begin(SHT31D_ADDR) == SHT3XD_NO_ERROR) {
-        if (sht31.periodicStart(SHT3XD_REPEATABILITY_HIGH, SHT3XD_FREQUENCY_10HZ) == SHT3XD_NO_ERROR) {
-            return true;
-        }
-    }
-
-#endif
-    return false;
-}
 
 void sensorsSetup() {
     Wire.begin(SDA, SCL);
     Wire.setClock(I2C_SPEED);
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_LPS35HW)
-
-    if (setupBaro()) {
-        sensor_state |= (1 << 0);
-
-    } else {
-        sensor_state &= ~(1 << 0);
-
-#if defined(DEBUG)
-        Serial.println("[SENSOR] Barometer did not respond. Please check wiring.");
-#endif
-    }
-
-#else
-    sensor_state &= ~(1 << 0);
+#if defined(HAS_BARO)
+    setupBaro();
 #endif
 
-
-#if defined(SENSOR_MCP9808)
-
-    if (mcp.begin(MCP9808_ADDR, &Wire)) {
-        sensor_state |= (1 << 1);
-        mcp.setResolution(3);
-        mcp.shutdown_wake(0);
-
-    } else {
-        sensor_state &= ~(1 << 1);
-
-#if defined(DEBUG)
-        Serial.println("[SENSOR] MCP9808 did not respond. Please check wiring.");
-#endif
-    }
-
-#else
-    sensor_state &= ~(1 << 1);
+#if defined(HAS_TEMP)
+    setupTemp();
 #endif
 
-#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
-
-    if (setupHumidity()) {
-        sensor_state |= (1 << 2);
-
-    } else {
-        sensor_state &= ~(1 << 2);
-
-#if defined(DEBUG)
-        Serial.println("[SENSOR] Humidity sensor did not respond. Please check wiring.");
-#endif
-    }
-
-#else
-    sensor_state &= ~(1 << 2);
+#if defined(HAS_HUMIDITY)
+    setupHumidity();
 #endif
 }
 
@@ -150,224 +41,81 @@ void sensorsLoop() {
 
     last_check = millis();
 
-#if defined(SENSOR_BME280) || defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
-    float abs_humidity = NAN;
-    float rel_humidity = NAN;
-    float temp_hum = NAN;
-#endif
+    sensorData data;
 
-#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
-#if defined(SENSOR_HTU21D)
-    temp_hum = htu.readTemperature();
-    rel_humidity = htu.readHumidity();
+    data.humidity[0] = NAN;
+    data.humidity[1] = NAN;
+    data.temp[0] = NAN;
+    data.temp[1] = NAN;
+    data.temp[2] = NAN;
+    data.pressure[0] = NAN;
+    data.pressure[1] = NAN;
 
-    if (temp_hum >= 255.0) {
-        temp_hum = NAN;
+#if defined(HAS_BARO)
+
+    if ((sensor_state & 0b1) == 0) {
+        setupBaro();
     }
 
-    if (rel_humidity > 100.0 || rel_humidity < 0.0) {
-        rel_humidity = NAN;
-    }
-
-#elif defined(SENSOR_SHT31)
-    SHT31D result = sht31.periodicFetchData();
-
-    if (result.error == SHT3XD_NO_ERROR) {
-        temp_hum = result.t;
-        rel_humidity = result.rh;
+    if (sensor_state & 0b1) {
+        readBaro(&data);
     }
 
 #endif
 
-    if (!isnan(temp_hum)) {
-        if ((sensor_state & 0b100) == 0) {
-            if (setupHumidity()) {
-                sensor_state |= (1 << 2);
+#if defined(HAS_TEMP)
 
-                humidity_filter[0].reset();  // rel
-                humidity_filter[1].reset();  // abs
-                humidity_temp_filter.reset();
+    if ((sensor_state & 0b10) == 0) {
+        setupTemp();
+    }
 
-#if defined(DEBUG)
-                Serial.println("[SENSOR] HTU21D is back on.");
-#endif
-
-            } else {
-                sensor_state &= ~(1 << 2);
-#if defined(DEBUG)
-                Serial.println("[SENSOR] Humidity sensor could not init again.");
-#endif
-            }
-        }
-
-        if (sensor_state & 0b100) {
-            abs_humidity = round2(humidity_filter[1].add(meteoFunctions.absoluteHumidity_c(temp_hum, rel_humidity)));
-            rel_humidity = round2(humidity_filter[0].add(rel_humidity));
-            temp_hum = round2(humidity_temp_filter.add(temp_hum));
-        }
-
-    } else {
-        if (sensor_state & 0b100) {
-            sensor_state &= ~(1 << 2);  // Humidity not available
-
-#if defined(DEBUG)
-            Serial.println("[SENSOR] Humidity sensor stopped responding. Please check wiring.");
-#endif
-        }
-
-        abs_humidity = NAN;
-        rel_humidity = NAN;
-        temp_hum = NAN;
+    if (sensor_state & 0b10) {
+        readTemp(&data);
     }
 
 #endif
 
-#if defined(SENSOR_MCP9808)
-    float temp_mcp = mcp.readTempC();
+#if defined(HAS_HUMIDITY)
 
-    if (!isnan(temp_mcp)) {
-        if ((sensor_state & 0b10) == 0) {
-            if (setupMCP9808()) {
-                sensor_state |= (1 << 1);
-
-                temp_filter.reset();
-
-#if defined(DEBUG)
-                Serial.println("[SENSOR] MCP9808 is back on.");
-#endif
-
-            } else {
-                sensor_state &= ~(1 << 1);
-#if defined(DEBUG)
-                Serial.println("[SENSOR] MCP9808 could not init again.");
-#endif
-            }
-        }
-
-        if (sensor_state & 0b10) {
-            temp_mcp = round2(temp_filter.add(temp_mcp));
-        }
-
-    } else {
-        if (sensor_state & 0b10) {
-            sensor_state &= ~(1 << 1);  // MCP not available
-
-#if defined(DEBUG)
-            Serial.println("[SENSOR] MCP9808 stopped responding. Please check wiring.");
-#endif
-        }
-
-        temp_mcp = NAN;
+    if ((sensor_state & 0b100) == 0) {
+        setupHumidity();
     }
 
-#endif
-
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
-    float temp_baro = NAN;
-    float abs_pressure = NAN;
-    float rel_pressure = NAN;
-
-#if defined(SENSOR_BMP280)
-    float none = NAN;
-    bmp.read(abs_pressure, temp_baro, none);
-#elif defined(SENSOR_BME280)
-    bmp.read(abs_pressure, temp_baro, rel_humidity);
-#elif defined(SENSOR_LPS35HW)
-    abs_pressure = lps.readPressure();
-    temp_baro = lps.readTemp();
-#endif
-
-    if (!isnan(temp_baro) && !isnan(abs_pressure)) {
-        if ((sensor_state & 0b1) == 0) {
-            if (setupBaro()) {
-                sensor_state |= (1 << 0);
-
-                baro_filter[0].reset();  // rel
-                baro_filter[1].reset();  // abs
-                baro_temp_filter.reset();
-
-#if defined(SENSOR_BME280)
-                humidity_filter[0].reset();  // rel
-                humidity_filter[1].reset();  // abs
-#endif
-
-
-#if defined(DEBUG)
-                Serial.println("[SENSOR] Barometer is back on.");
-#endif
-
-            } else {
-                sensor_state &= ~(1 << 0);
-
-#if defined(DEBUG)
-                Serial.println("[SENSOR] Barometer could not init.");
-#endif
-            }
-        }
-
-        if (sensor_state & 0b1) {
-            rel_pressure = round2(baro_filter[0].add(meteoFunctions.relativePressure_c(abs_pressure, height_above_sea, temp_baro)));
-            abs_pressure = round2(baro_filter[1].add(abs_pressure));
-            temp_baro = round2(baro_temp_filter.add(temp_baro));
-
-#if defined(SENSOR_BME280)
-            abs_humidity = round2(humidity_filter[1].add(meteoFunctions.absoluteHumidity_c(temp_baro, rel_humidity)));
-            rel_humidity = round2(humidity_filter[0].add(rel_humidity));
-            temp_hum = temp_baro;
-#endif
-        }
-
-    } else {
-        if (sensor_state & 0b1) {
-            sensor_state &= ~(1 << 0);  // Baro not available
-
-#if defined(DEBUG)
-            Serial.println("[SENSOR] Barometer stopped responding again. Please check wiring.");
-#endif
-        }
-
-        rel_pressure = NAN;
-        abs_pressure = NAN;
-        temp_baro = NAN;
-
-#if defined(SENSOR_BME280)
-        rel_humidity = NAN;
-        abs_humidity = NAN;
-        temp_hum = NAN;
-#endif
+    if (sensor_state & 0b100) {
+        readHumidity(&data);
     }
 
 #endif
 
 #if defined(DEBUG)
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+#if defined(HAS_BARO)
     Serial.print("[SENSOR] Pressure: ");
-    Serial.print(abs_pressure, 2);
-    Serial.print(" hPa, ");
-    Serial.print(rel_pressure, 2);
-    Serial.println(" hPa");
+    Serial.print(data.pressure[1], 2);
+    Serial.print("hPa (abs), ");
+    Serial.print(data.pressure[0], 2);
+    Serial.println("hPa (rel)");
     Serial.print("[SENSOR] Pressure temp: ");
-    Serial.print(temp_baro);
+    Serial.print(data.temp[0]);
     Serial.println(" C");
 #endif
 
-#if defined(SENSOR_MCP9808)
-    Serial.print("[SENSOR] Temp MCP: ");
-    Serial.print(temp_mcp, 2);
+#if defined(HAS_TEMP)
+    Serial.print("[SENSOR] Temp: ");
+    Serial.print(data.temp[1], 2);
     Serial.println(" C");
 #endif
 
-#if defined(SENSOR_BME280) || defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+#if defined(SENSOR_BME280) || defined(HAS_HUMIDITY)
     Serial.print("[SENSOR] Humidity: ");
-    Serial.print(abs_humidity, 2);
+    Serial.print(data.humidity[1], 2);
     Serial.print(" g/m3, ");
-    Serial.print(rel_humidity, 2);
+    Serial.print(data.humidity[0], 2);
     Serial.println(" %");
 #endif
 
-#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+#if defined(HAS_HUMIDITY)
     Serial.print("[SENSOR] Humidity temp: ");
-    Serial.print(temp_hum, 2);
+    Serial.print(data.temp[2], 2);
     Serial.println(" C");
 #endif
 
@@ -379,80 +127,76 @@ void sensorsLoop() {
     if (counter > READ_SAMPLES) {  // time to send data
         counter = 0;
 
-        if (mqtt.connected()) {
-            StaticJsonDocument < (JSON_OBJECT_SIZE(9) + JSON_ARRAY_SIZE(3)) > json;
+        if (!mqtt.connected()) {
+            return;
+        }
 
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
+        StaticJsonDocument < (JSON_OBJECT_SIZE(9) + JSON_ARRAY_SIZE(3)) > json;
 
-            if (!isnan(rel_pressure)) {
-                json["pressure_rel"] = rel_pressure;
-            }
+#if defined(HAS_BARO)
 
-            if (!isnan(abs_pressure)) {
-                json["pressure_abs"] = abs_pressure;
-            }
+        if (!isnan(data.pressure[0])) {
+            json["pressure_rel"] = data.pressure[0];
+        }
 
-#endif
-
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_MCP9808) || defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
-
-            if (sensor_state > 0) {
-                JsonArray temperatures = json.createNestedArray("temp");
-#if defined(SENSOR_BMP280) || defined(SENSOR_BME280) || defined(SENSOR_LPS35HW)
-                temperatures.add(temp_baro);
-#endif
-
-#if defined(SENSOR_MCP9808)
-                temperatures.add(temp_mcp);
-#endif
-
-#if defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
-                temperatures.add(temp_hum);
-#endif
-            }
+        if (!isnan(data.pressure[1])) {
+            json["pressure_abs"] = data.pressure[1];
+        }
 
 #endif
 
-#if defined(SENSOR_BME280) || defined(SENSOR_HTU21D) || defined(SENSOR_SHT31)
+#if defined(HAS_BARO) || defined(HAS_TEMP) || defined(HAS_HUMIDITY)
 
-            if (!isnan(rel_humidity)) {
-                json["humidity_rel"] = rel_humidity;
-            }
+        if (sensor_state > 0) {
+            JsonArray temperatures = json.createNestedArray("temp");
+#if defined(HAS_BARO)
+            temperatures.add(data.temp[0]);
+#endif
 
-            if (!isnan(abs_humidity)) {
-                json["humidity_abs"] = abs_humidity;
-            }
+#if defined(HAS_TEMP)
+            temperatures.add(data.temp[1]);
+#endif
 
-            if (!isnan(temp_hum) && !isnan(rel_humidity)) {
-                json["dew"] = round2(meteoFunctions.dewPoint_c(temp_hum, rel_humidity));
-                json["humidex"] = round2(meteoFunctions.humidex_c(temp_hum, rel_humidity));
-                json["heat"] = round2(meteoFunctions.heatIndex_c(temp_hum, rel_humidity));
-                json["cloud"] = round2(meteoFunctions.cloudBase_m(temp_hum, rel_humidity));
-            }
-
+#if defined(HAS_HUMIDITY)
+            temperatures.add(data.temp[2]);
+#endif
+        }
 
 #endif
 
-            if (json.size() > 0) {
+#if defined(SENSOR_BME280) || defined(HAS_HUMIDITY)
+
+        if (!isnan(data.humidity[0])) {
+            json["humidity_rel"] = data.humidity[0];
+        }
+
+        if (!isnan(data.humidity[1])) {
+            json["humidity_abs"] = data.humidity[1];
+        }
+
+        if (!isnan(data.temp[2]) && !isnan(data.humidity[0])) {
+            json["dew"] = round2(meteoFunctions.dewPoint_c(data.temp[2], data.humidity[0]));
+            json["humidex"] = round2(meteoFunctions.humidex_c(data.temp[2], data.humidity[0]));
+            json["heat"] = round2(meteoFunctions.heatIndex_c(data.temp[2], data.humidity[0]));
+            json["cloud"] = round2(meteoFunctions.cloudBase_m(data.temp[2], data.humidity[0]));
+        }
+
+#endif
+
+        if (json.size() > 0) {
 #if defined(DEBUG)
-                Serial.println("[MQTT] Sending sensor data:");
-                serializeJsonPretty(json, Serial);
-                Serial.println();
+            Serial.println("[MQTT] Sending sensor data:");
+            serializeJsonPretty(json, Serial);
+            Serial.println();
 #endif
 
-                char message[350];
-                uint32_t len = serializeJson(json, message, sizeof(message));
-                mqtt.publish(MQTT_SENSORS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
-
-            } else {
-#if defined(DEBUG)
-                Serial.println("[MQTT] No valid data to send");
-#endif
-            }
+            char message[350];
+            uint32_t len = serializeJson(json, message, sizeof(message));
+            mqtt.publish(MQTT_SENSORS_TOPIC, MQTT_QOS, MQTT_RETAIN, message, len);
 
         } else {
 #if defined(DEBUG)
-            // Serial.println("[MQTT] Could not send sensors data");
+            Serial.println("[MQTT] No valid data to send");
 #endif
         }
     }
