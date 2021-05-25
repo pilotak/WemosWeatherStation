@@ -91,9 +91,9 @@ void sensorsLoop() {
 #if defined(HAS_BARO)
     Serial.print("[SENSOR] Pressure: ");
     Serial.print(data.pressure[1], 2);
-    Serial.print("hPa (abs), ");
+    Serial.print(" hPa (abs), ");
     Serial.print(data.pressure[0], 2);
-    Serial.println("hPa (rel)");
+    Serial.println(" hPa (rel)");
     Serial.print("[SENSOR] Pressure temp: ");
     Serial.print(data.temp[0]);
     Serial.println(" C");

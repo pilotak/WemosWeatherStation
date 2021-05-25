@@ -5,15 +5,14 @@ bool setupHumidity() {
     if (htu.begin(SDA, SCL)) {
         sensor_state |= (1 << 2);
 
+#if defined(DEBUG)
+        Serial.println("[SENSOR] HTU21D is online");
+#endif
         return true;
     }
 
 #if defined(DEBUG)
-
-    if (sensor_state & 0b100) {
-        Serial.println("[SENSOR] HTU21D did not respond. Please check wiring.");
-    }
-
+    Serial.println("[SENSOR] HTU21D did not respond. Please check wiring.");
 #endif
 
     sensor_state &= ~(1 << 2);

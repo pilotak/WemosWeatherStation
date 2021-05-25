@@ -16,14 +16,14 @@ bool setupBaro() {
     if (bmp.begin()) {
         sensor_state |= (1 << 0);
 
+#if defined(DEBUG)
+        Serial.println("[SENSOR] Baro is online");
+#endif
         return true;
     }
 
 #if defined(DEBUG)
-
-    if (sensor_state & 0b1) {
-        Serial.println("[SENSOR] BMP280 did not respond. Please check wiring.");
-    }
+    Serial.println("[SENSOR] Baro did not respond. Please check wiring.");
 
 #endif
 

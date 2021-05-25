@@ -6,16 +6,15 @@ bool setupHumidity() {
         if (sht31.periodicStart(SHT3XD_REPEATABILITY_HIGH, SHT3XD_FREQUENCY_10HZ) == SHT3XD_NO_ERROR) {
             sensor_state |= (1 << 2);
 
+#if defined(DEBUG)
+            Serial.println("[SENSOR] SHT31D is online");
+#endif
             return true;
         }
     }
 
 #if defined(DEBUG)
-
-    if (sensor_state & 0b100) {
-        Serial.println("[SENSOR] SHT31D did not respond. Please check wiring.");
-    }
-
+    Serial.println("[SENSOR] SHT31D did not respond. Please check wiring.");
 #endif
 
     sensor_state &= ~(1 << 2);

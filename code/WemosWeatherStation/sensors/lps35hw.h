@@ -6,15 +6,14 @@ bool setupBaro() {
         lps.setLowPassFilter(LPS35HW::LowPassFilter_ODR9);
         sensor_state |= (1 << 0);
 
+#if defined(DEBUG)
+        Serial.println("[SENSOR] LPS35HW is online");
+#endif
         return true;
     }
 
 #if defined(DEBUG)
-
-    if (sensor_state & 0b1) {
-        Serial.println("[SENSOR] LPS35HW did not respond. Please check wiring.");
-    }
-
+    Serial.println("[SENSOR] LPS35HW did not respond. Please check wiring.");
 #endif
 
     sensor_state &= ~(1 << 0);

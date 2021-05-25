@@ -7,15 +7,14 @@ bool setupTemp() {
         mcp.setResolution(3);
         mcp.shutdown_wake(0);
 
+#if defined(DEBUG)
+        Serial.println("[SENSOR] MCP9808 is online");
+#endif
         return true;
     }
 
 #if defined(DEBUG)
-
-    if (sensor_state & 0b10) {
-        Serial.println("[SENSOR] MCP9808 did not respond. Please check wiring.");
-    }
-
+    Serial.println("[SENSOR] MCP9808 did not respond. Please check wiring.");
 #endif
 
     sensor_state &= ~(1 << 1);
