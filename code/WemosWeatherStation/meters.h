@@ -10,11 +10,11 @@ volatile bool meters_data = false;
 volatile bool rain_data = false;
 volatile bool read_adc = false;
 
-void ICACHE_RAM_ATTR intAnemometer() {
+void IRAM_ATTR intAnemometer() {
     meters.intAnemometer();
 }
 
-void ICACHE_RAM_ATTR intRaingauge() {
+void IRAM_ATTR intRaingauge() {
     meters.intRaingauge();
 }
 
