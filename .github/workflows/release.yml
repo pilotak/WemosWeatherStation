@@ -9,23 +9,28 @@ defaults:
   run:
     working-directory: ./code
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # full history and tags for the changelog
 
-      - name: Prepare
-        id: prepare
-        run: |
-          git fetch --prune --unshallow --tags -f
-
-          CURRENT_TAG=$(git tag --points-at HEAD)
-          echo ::set-output name=version::${CURRENT_TAG//v}
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('code/platformio.ini') }}
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
 
       - name: Install dependencies
         run: |
@@ -33,12 +38,10 @@ jobs:
           pip install platformio
 
       - name: Build
-        if: success()
         run: |
           pio run -e WemosWeatherStation_v2 -e WemosWeatherStation_v2_upgrade -e WemosWeatherStation_v2_bmp280
 
       - name: Create release
-        if: ${{ success() && steps.prepare.outputs.version != null }}
         run: |
           set -x
           assets=()
@@ -46,14 +49,12 @@ jobs:
           for path in ./.pio/build/*/; do
             name="$(basename "${path}")"
             mv "./.pio/build/$name/firmware.bin" "$name.bin"
-            assets+=("-a" "$name.bin")
+            assets+=("$name.bin")
           done
 
-          echo "FW ${{ steps.prepare.outputs.version }}" >"CHANGELOG.md"
-          echo "" >>"CHANGELOG.md"
-          echo "## :bookmark_tabs: Changes" >>"CHANGELOG.md"
-          git log --pretty=format:"- %s %H%n" $(git describe --abbrev=0 --tags $(git describe --tags --abbrev=0)^)...$(git describe --tags --abbrev=0) >>"CHANGELOG.md"
+          echo "## :bookmark_tabs: Changes" >"CHANGELOG.md"
+          git log --pretty=format:"- %s %H%n" "$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^")..${GITHUB_REF_NAME}" >>"CHANGELOG.md"
 
-          hub release create "${assets[@]}" "--file" "CHANGELOG.md" "$(git tag --points-at HEAD)"
+          gh release create "${GITHUB_REF_NAME}" "${assets[@]}" --title "FW ${GITHUB_REF_NAME#v}" --notes-file "CHANGELOG.md"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}

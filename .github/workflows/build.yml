@@ -19,10 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('code/platformio.ini') }}
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
 
       - name: Install dependencies
         run: |
@@ -30,6 +38,5 @@ jobs:
           pip install platformio
 
       - name: Build
-        if: success()
         run: |
           pio run -e WemosWeatherStation_v2 -e WemosWeatherStation_v2_upgrade -e WemosWeatherStation_v2_bmp280
