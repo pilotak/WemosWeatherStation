@@ -75,11 +75,11 @@ void metersLoop() {
 
     if (rain_data || meters_data) {
         if (mqtt.connected()) {
-            StaticJsonDocument <JSON_OBJECT_SIZE(5)> json;
             char message[180];
 
             if (rain_data) {
                 rain_data = false;
+                StaticJsonDocument <JSON_OBJECT_SIZE(1)> json;
                 json["rain"] = RAIN_GAUGE_RES;
 
 #if defined(DEBUG)
@@ -94,6 +94,7 @@ void metersLoop() {
 
             if (meters_data) {
                 meters_data = false;
+                StaticJsonDocument <JSON_OBJECT_SIZE(5)> json;
                 float wind_speed_kmh = meters.getSpeed();
                 float wind_speed_ms = meteoFunctions.kmhToMs(wind_speed_kmh);
 
