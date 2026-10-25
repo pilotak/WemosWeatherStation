@@ -1,3 +1,23 @@
+#if defined(HAS_METERS)
+void metersPause();
+void metersResume();
+#endif
+
+// meter ISRs must not run while flash is being written
+void otaStarted() {
+    ota_in_progess = true;
+#if defined(HAS_METERS)
+    metersPause();
+#endif
+}
+
+void otaStopped() {
+    ota_in_progess = false;
+#if defined(HAS_METERS)
+    metersResume();
+#endif
+}
+
 void otaSetup() {
 #if defined(NOFUSS_OTA)
     NoFUSSClient.setServer(nofuss_server);
@@ -9,11 +29,7 @@ void otaSetup() {
 #if defined(DEBUG)
             Serial.println("[NoFUSS] Starting");
 #endif
-            ota_in_progess = true;
-#if defined(HAS_METERS)
-            attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), NULL, FALLING);
-            attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), NULL, FALLING);
-#endif
+            otaStarted();
         }
 
 #if defined(DEBUG)
@@ -65,7 +81,7 @@ void otaSetup() {
             Serial.println("[NoFUSS] End");
 #endif
 
-            ota_in_progess = false;
+            otaStopped();
         }
     });
 #endif
@@ -78,7 +94,7 @@ void otaSetup() {
 #if defined(DEBUG)
         Serial.println("[OTA] Starting");
 #endif
-        ota_in_progess = true;
+        otaStarted();
     });
     ArduinoOTA.onEnd([]() {
 #if defined(DEBUG)
@@ -98,7 +114,7 @@ void otaSetup() {
     });
 #endif
     ArduinoOTA.onError([](ota_error_t error) {
-        ota_in_progess = false;
+        otaStopped();
 
 #if defined(DEBUG)
         Serial.print("\n\e[0E");  // new line + move to the beginning of the current line
@@ -150,7 +166,7 @@ void otaLoop() {
 void httpUpdate() {
     char msg[127];
     uint32_t len = 0;
-    ota_in_progess = true;
+    otaStarted();
     WiFiClient client;
 
     ESPhttpUpdate.rebootOnUpdate(false);
@@ -164,7 +180,7 @@ void httpUpdate() {
 
     switch (ret) {
         case HTTP_UPDATE_FAILED:
-            ota_in_progess = false;
+            otaStopped();
 
             len = snprintf(msg, sizeof(msg), "%s", ESPhttpUpdate.getLastErrorString().c_str());
             mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, msg, len);
@@ -175,7 +191,7 @@ void httpUpdate() {
             break;
 
         case HTTP_UPDATE_NO_UPDATES:
-            ota_in_progess = false;
+            otaStopped();
             mqtt.publish(MQTT_UPGRADE_STATUS_TOPIC, MQTT_QOS, false, "No updates");
 
 #if defined(DEBUG)

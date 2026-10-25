@@ -10,11 +10,11 @@ volatile bool meters_data = false;
 volatile bool rain_data = false;
 volatile bool read_adc = false;
 
-void IRAM_ATTR intAnemometer() {
+void IRAM_ATTR __attribute__((flatten)) intAnemometer() {
     meters.intAnemometer();
 }
 
-void IRAM_ATTR intRaingauge() {
+void IRAM_ATTR __attribute__((flatten)) intRaingauge() {
     meters.intRaingauge();
 }
 
@@ -29,13 +29,22 @@ void metersData(void) {
     meters_data = true;
 }
 
-void rainData(void) {
+void IRAM_ATTR rainData(void) {
     rain_data = true;
 }
 
-void metersSetup() {
+void metersPause() {
+    detachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN));
+    detachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN));
+}
+
+void metersResume() {
     attachInterrupt(digitalPinToInterrupt(ANEMOMETER_PIN), intAnemometer, FALLING);
     attachInterrupt(digitalPinToInterrupt(RAIN_GAUGE_PIN), intRaingauge, FALLING);
+}
+
+void metersSetup() {
+    metersResume();
 
     mcp3021.init(&Wire);
 
