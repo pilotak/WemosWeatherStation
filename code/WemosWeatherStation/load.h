@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 
 WiFiManager wifiManager;
+char hostname[sizeof(DEVICE_NAME)];  // DEVICE_NAME with '_' replaced by '-', as hostnames can't contain underscores
 WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
 
@@ -49,13 +50,9 @@ class IntParameter : public WiFiManagerParameter {
     }
 
     void setValue(int32_t value, uint8_t max_size) {
-        char *buffer = new char[max_size];
-
-        if (buffer) {
-            itoa(value, buffer, 10);
-            WiFiManagerParameter::setValue(buffer, max_size);
-            delete[] buffer;
-        }
+        char buffer[12];  // fits any int32_t incl. sign and terminator
+        itoa(value, buffer, 10);
+        WiFiManagerParameter::setValue(buffer, max_size);
     }
 
     char *custom_buffer;

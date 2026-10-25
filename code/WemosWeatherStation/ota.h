@@ -72,7 +72,7 @@ void otaSetup() {
 
 #if defined(ARDUINO_OTA)
     ArduinoOTA.setPort(OTA_PORT);
-    ArduinoOTA.setHostname(DEVICE_NAME);
+    ArduinoOTA.setHostname(hostname);
 
     ArduinoOTA.onStart([]() {
 #if defined(DEBUG)

@@ -240,7 +240,11 @@ void wifiSetup() {
     wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
     wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
-    wifiManager.setHostname(DEVICE_NAME);
+    for (uint8_t i = 0; i < sizeof(hostname); i++) {
+        hostname[i] = (DEVICE_NAME[i] == '_') ? '-' : DEVICE_NAME[i];
+    }
+
+    wifiManager.setHostname(hostname);
     wifiManager.setWiFiAutoReconnect(true);
     wifiManager.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT);
     wifiManager.setConfigPortalBlocking(false);

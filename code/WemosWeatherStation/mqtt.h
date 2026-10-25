@@ -128,6 +128,7 @@ void mqttSetup() {
 
     snprintf(will, sizeof(will), "{\"status\": %i}", MQTT_STATUS_DEAD);
 
+    mqtt.setClientId(DEVICE_NAME);
     mqtt.setCredentials(mqtt_user, mqtt_password);
     mqtt.setWill(MQTT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, will, strlen(will));
     mqtt.setKeepAlive((MQTT_STATUS_INTERVAL / 1000) + 2);  // converts ms->s + 2 sec extra, in case we have a delay
