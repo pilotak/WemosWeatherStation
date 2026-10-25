@@ -3,7 +3,7 @@ BME280I2C::Settings settings(
     BME280::OSR_X1,
     BME280::OSR_X1,
     BME280::OSR_X1,
-    BME280::Mode_Forced,
+    BME280::Mode_Normal,
     BME280::StandbyTime_1000ms,
     BME280::Filter_8,
     BME280::SpiEnable_False,
