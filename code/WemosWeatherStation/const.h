@@ -1,5 +1,5 @@
 #define DEVICE_NAME "meteo"  // used for MQTT topics and client ID, OTA, AP
-#define FW_VERSION "2.0.0"
+#define FW_VERSION "2.0.1"
 
 #define CONFIG_PATH "/config.json"
 #define CONFIG_AP_SSID DEVICE_NAME "_config"
